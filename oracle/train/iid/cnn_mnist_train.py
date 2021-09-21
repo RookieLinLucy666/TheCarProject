@@ -112,17 +112,7 @@ train_loader = DataLoader(DatasetSplit(train_dataset, train_idx),
 #                          batch_size=batch_size)
 
 model = Net()
-gpu_count = 4
-cuda = ""
-if node_id % gpu_count == 0:
-    cuda = "cuda:0"
-if node_id % gpu_count == 1:
-    cuda = "cuda:1"
-if node_id % gpu_count == 2:
-    cuda = "cuda:2"
-if node_id % gpu_count == 3:
-    cuda = "cuda:3"
-device = torch.device(cuda if torch.cuda.is_available() else "cpu")
+device = torch.device("cpu")
 model.to(device)#convert parameters and buffers of all modules to cuda tensor
 criterion = torch.nn.CrossEntropyLoss()
 optimizer = optim.SGD(model.parameters(),lr=0.01, momentum=0.5)

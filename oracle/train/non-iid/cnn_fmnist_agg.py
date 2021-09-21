@@ -120,7 +120,7 @@ transform = transforms.Compose([
 ])
 
 model = Net()
-device = torch.device("cuda:3" if torch.cuda.is_available() else "cpu")
+device = torch.device("cpu")
 # device = torch.device(
 #     'cuda:{}'.format(node_id % gpu_count) if torch.cuda.is_available() else 'cpu')
 # device = torch.device("cpu")

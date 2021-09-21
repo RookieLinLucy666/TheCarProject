@@ -35,7 +35,14 @@ func (priv PrivateKey) Public() crypto.PublicKey {
 	return PublicKey(publicKey)
 }
 
-//
+/**
+  Sign
+  @Description: bls签名
+  @receiver priv 私钥
+  @param message 待签名的消息
+  @return signature 签名
+  @return err
+**/
 func (priv PrivateKey) Sign(message []byte) (signature []byte, err error) {
 	sk := big.NewInt(0).SetBytes(priv)
 	sig := Sign(sk, string(message))

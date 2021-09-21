@@ -321,5 +321,26 @@ Store.abi  Store.bin  Store.go  Store.sol
 ```
 将生成的`Store.go`文件拷贝到`oracle/fisco`文件下，进行合约调用。
 
-
-
+# 命令行生成账户
+获取脚本
+``` 
+curl -#LO https://raw.githubusercontent.com/FISCO-BCOS/console/master/tools/get_account.sh && chmod u+x get_account.sh && bash get_account.sh -h
+```
+使用脚本生成PEM格式私钥
+```
+bash get_account.sh
+```
+执行上面的命令，可以得到类似下面的输出，包括账户地址和以账户地址为文件名的私钥PEM文件。
+```
+[INFO] Account Address   : 0x22a163da252e56d8c1befc5efea123991f761c36
+[INFO] Private Key (pem) : accounts/0x22a163da252e56d8c1befc5efea123991f761c36.pem
+[INFO] Public  Key (pem) : accounts/0x22a163da252e56d8c1befc5efea123991f761c36.public.pem
+```
+指定PEM私钥文件计算账户地址
+```
+bash get_account.sh -k accounts/0x22a163da252e56d8c1befc5efea123991f761c36.pem
+```
+执行上面的命令，结果如下
+```
+[INFO] Account Address   : 0x22a163da252e56d8c1befc5efea123991f761c36
+```

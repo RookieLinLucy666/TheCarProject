@@ -9,6 +9,10 @@ import (
 	"time"
 )
 
+//
+//  Client
+//  @Description: 客户端，其角色用于连接区块链
+//
 type Client struct {
 	nodeId     int
 	url        string
@@ -34,6 +38,11 @@ func NewClient(i int32) *Client {
 	return client
 }
 
+/**
+  Start
+  @Description: 启动客户端，包括发送请求，建立TCP连接等
+  @receiver c
+**/
 func (c *Client) Start() {
 	c.sendRequest()
 	ln, err := net.Listen("tcp", c.url)
@@ -53,6 +62,13 @@ func (c *Client) Start() {
 	}
 }
 
+/**
+  handleConnection
+  @Description: 监听消息
+  @receiver c
+  @param conn
+  @return reply
+**/
 func (c *Client) handleConnection(conn net.Conn) (reply bool) {
 	req, err := ioutil.ReadAll(conn)
 	header, payload, _ := SplitMsg(req)
@@ -66,6 +82,11 @@ func (c *Client) handleConnection(conn net.Conn) (reply bool) {
 	return reply
 }
 
+/**
+  sendRequest
+  @Description: 发送请求
+  @receiver c
+**/
 func (c *Client) sendRequest() {
 	groups := c.generateMali()
 
@@ -97,18 +118,39 @@ func (c *Client) sendRequest() {
 	c.request = reqmsg
 }
 
+/**
+  handleReply
+  @Description: 处理返回的请求
+  @receiver c
+  @param payload
+  @return bool
+**/
 func (c *Client) handleReply(payload []byte) bool {
 	c.EndTime = time.Now()
 	fmt.Println("Finish calculation.")
 	return true
 }
 
+/**
+  generateMali
+  @Description: 生成恶意节点，在Demo中恶意节点数量为0
+  @receiver c
+  @return []int
+**/
 func (c *Client) generateMali() []int{
 	//测试5次
 	nums := generateRandomNumber(1, NodeCount, int(math.Floor(NodeCount * Malicious)))
 	return nums
 }
 
+/**
+  signMessage
+  @Description: 节点给消息签名
+  @receiver c
+  @param msg
+  @return []byte
+  @return error
+**/
 func (c *Client) signMessage(msg interface{}) ([]byte, error) {
 	sig, err := signMessage(msg, c.keypair.privkey)
 	if err != nil {
@@ -117,6 +159,12 @@ func (c *Client) signMessage(msg interface{}) ([]byte, error) {
 	return sig, nil
 }
 
+/**
+  findPrimaryNode
+  @Description: 寻找预言机的广播节点
+  @receiver c
+  @return *KnownNode
+**/
 func (c *Client) findPrimaryNode() *KnownNode {
 	nodeId := ViewID % len(c.knownNodes)
 	for _, knownNode := range c.knownNodes {

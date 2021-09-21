@@ -17,6 +17,10 @@ const (
 	hRequest    HeaderMsg = "Request"
 	hTrain HeaderMsg = "Train"
 	hAgg    HeaderMsg = "Aggregate"
+	hData   HeaderMsg = "Data"
+	hCross	HeaderMsg = "Cross"
+	hAggData HeaderMsg = "AggData"
+	hAggCross HeaderMsg = "AggCross"
 	hReply     HeaderMsg = "Commit"
 )
 
@@ -32,6 +36,10 @@ type NetMsg struct {
 	RequestMsg       *RequestMsg
 	TrainMsg    *TrainMsg
 	AggMsg       *AggMsg
+	DataMsg		*DataMsg
+	AggDataMsg	*AggDataMsg
+	CrossMsg 	*CrossMsg
+	AggCrossMsg *AggCrossMsg
 	ReplyMsg        *ReplyMsg
 }
 
@@ -52,9 +60,9 @@ func (msg RequestMsg) String() string {
 }
 
 /**
-数据集、模型、全局轮数、局部轮数、节点总数、节点地址、聚合后的参数
- */
-
+  TrainMsg
+  @Description: 执行训练任务的消息
+**/
 type TrainMsg struct {
 	Dataset string	`json:"dataset"`
 	Model 	string 	`json:"model"`
@@ -72,9 +80,9 @@ func (msg TrainMsg) String() string {
 }
 
 /**
-待聚合参数，全局轮数，节点id，聚合节点链接
- */
-
+  AggMsg
+  @Description: 执行参数聚合的消息
+**/
 type AggMsg struct {
 	Global_Epoch int `json:"global_epoch"`
 	Current_Epoch int `json:"current_epoch"`
@@ -96,8 +104,56 @@ func (msg AggMsg) String() string {
 }
 
 /**
-返回参数的摘要
- */
+  DataMsg
+  @Description: 执行数据获取的消息
+**/
+type DataMsg struct {
+	//TODO
+}
+
+func (msg DataMsg) String() string {
+	bmsg, _ := json.MarshalIndent(msg, "", "	")
+	return string(bmsg) + "\n"
+}
+
+/**
+  AggDataMsg
+  @Description: 聚合数据的消息
+**/
+type AggDataMsg struct {
+	//TODO
+}
+
+func (msg AggDataMsg) String() string {
+	bmsg, _ := json.MarshalIndent(msg, "", "	")
+	return string(bmsg) + "\n"
+}
+
+/**
+  CrossMsg
+  @Description: 执行跨链请求的消息
+**/
+type CrossMsg struct {
+	//TODO
+}
+
+func (msg CrossMsg) String() string {
+	bmsg, _ := json.MarshalIndent(msg, "", "	")
+	return string(bmsg) + "\n"
+}
+
+/**
+  AggCrossMsg
+  @Description: 执行跨链请求的消息
+**/
+type AggCrossMsg struct {
+	//TODO
+}
+
+func (msg AggCrossMsg) String() string {
+	bmsg, _ := json.MarshalIndent(msg, "", "	")
+	return string(bmsg) + "\n"
+}
 
 type ReplyMsg struct {
 	Digest string `json:"digest"`
@@ -166,26 +222,26 @@ func SplitMsg(bmsg []byte) (HeaderMsg, []byte, []byte) {
 	}
 	header = HeaderMsg(hhbyte)
 	switch header {
-	case hRequest:
+	case hRequest, hAggData, hAggCross:
 		payload = bmsg[headerLength : len(bmsg)-256]
 		signature = bmsg[len(bmsg)-256:]
-	case hReply, hTrain, hAgg:
+	case hReply, hTrain, hAgg, hCross, hData:
 		payload = bmsg[headerLength:]
 		signature = []byte{}
 	}
 	return header, payload, signature
 }
 
-func printMsgLog(msg Msg) {
-	fmt.Println(msg.String())
-}
+//func printMsgLog(msg Msg) {
+//	fmt.Println(msg.String())
+//}
 
-func logHandleMsg(header HeaderMsg, msg Msg, from int) {
-	fmt.Printf("Receive %s msg from localhost:%d\n", header, nodeIdToPort(from))
-	printMsgLog(msg)
-}
-
-func logBroadcastMsg(header HeaderMsg, msg Msg) {
-	fmt.Printf("Send/broadcast %s msg \n", header)
-	printMsgLog(msg)
-}
+//func logHandleMsg(header HeaderMsg, msg Msg, from int) {
+//	fmt.Printf("Receive %s msg from localhost:%d\n", header, nodeIdToPort(from))
+//	printMsgLog(msg)
+//}
+//
+//func logBroadcastMsg(header HeaderMsg, msg Msg) {
+//	fmt.Printf("Send/broadcast %s msg \n", header)
+//	printMsgLog(msg)
+//}

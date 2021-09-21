@@ -120,7 +120,7 @@ transform = transforms.Compose([
 ])
 
 model = Net()
-device = torch.device("cuda:3" if torch.cuda.is_available() else "cpu")
+device = torch.device("cpu")
 
 model.to(device)  # convert parameters and buffers of all modules to cuda tensor
 criterion = torch.nn.CrossEntropyLoss()
