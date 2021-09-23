@@ -1,10 +1,5 @@
 package main
 
-import (
-	"encoding/json"
-	"fmt"
-)
-
 type Item interface {}
 
 // 队列结构体
@@ -57,25 +52,5 @@ func initQueue() *Queue  {
 		q.New()
 	}
 	return &q
-}
-
-func main()  {
-	q := initQueue()
-
-	q.Enqueue("hello")
-	q.Enqueue(1)
-	fmt.Println("___", q)
-	str, _ := json.Marshal(q)
-
-	fmt.Println("___", []byte(str))
-	json.Unmarshal([]byte(str), q)
-	fmt.Println("___", q)
-
-	//q.Enqueue("a")
-	//q.Enqueue(1)
-	//fmt.Println("length:", q.Size())
-	//fmt.Println(q)
-	tmp := q.Dequeue()
-	fmt.Println("出队：", *tmp)
 }
 
