@@ -433,6 +433,8 @@ func (node *Node) handleAgg(aggMsg *AggMsg, sig []byte, clientNodeUrl string) {
 **/
 func (node *Node) handleData(dataMsg *DataMsg, sig []byte, clientNodeUrl string) {
 	//TODO
+
+
 }
 
 /**
