@@ -121,14 +121,14 @@ func (cfa *carFileAsset) Query(ctx code.Context) code.Response{
 
 	//根据Id查询元数据
 	metaMapByte, err := ctx.GetObject([]byte(META))
+	if err != nil {
+		return code.Error(err)
+	}
 	metaMap := map[string][]byte{}
 	if err := json.Unmarshal(metaMapByte, &metaMap); err != nil {
 		return code.Error(err)
 	}
 	data := metaMap[args.Id]
-	if err != nil {
-		return code.Error(err)
-	}
 	//调用代理合约进行查询
 	task := queryTask{
 		Id: args.Id,
@@ -137,7 +137,7 @@ func (cfa *carFileAsset) Query(ctx code.Context) code.Response{
 	if err := cfa.QueryAgentAccept(ctx, task); err != nil {
 		return code.Error(err)
 	}
-	return code.OK([]byte("call agent query contract successfully"))
+	return code.OK([]byte(args.Id))
 }
 
 
@@ -393,7 +393,7 @@ func (cfa *carFileAsset) CreateCfa(ctx code.Context) code.Response{
 	metaMap := map[string][]byte{}
 	metaMap[newId] = dataByte
 	metaMapByte, _ = json.Marshal(metaMap)
-	if err := ctx.PutObject([]byte(newId), metaMapByte); err != nil {
+	if err := ctx.PutObject([]byte(META), metaMapByte); err != nil {
 		return code.Error(err)
 	}
 	//更新id数量
