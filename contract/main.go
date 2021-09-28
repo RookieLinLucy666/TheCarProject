@@ -246,8 +246,12 @@ func (cfa *carFileAsset) ComputingShare(ctx code.Context) code.Response{
 		return code.Error(err)
 	}
 	//根据Id查询元数据
-	metaDataByte, err := ctx.GetObject([]byte(args.Id))
+	metaMapByte, err := ctx.GetObject([]byte(META))
 	if err != nil {
+		return code.Error(err)
+	}
+	metaMap := map[string][]byte{}
+	if err := json.Unmarshal(metaMapByte, &metaMap); err != nil {
 		return code.Error(err)
 	}
 	//构造传入代理合约数据格式
@@ -260,7 +264,7 @@ func (cfa *carFileAsset) ComputingShare(ctx code.Context) code.Response{
 	faderatedByte, _ := json.Marshal(faderated)
 	data := faderatedAIData{
 		Id: args.Id,
-		MetaDataByte: metaDataByte,
+		MetaDataByte: metaMap[args.Id],
 		FaderatedAIDemandByte: faderatedByte,
 	}
 	//调用代理合约
