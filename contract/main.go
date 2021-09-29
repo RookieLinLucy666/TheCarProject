@@ -74,10 +74,7 @@ func (cfa *carFileAsset) Initialize(ctx code.Context) code.Response{
 	//初始化任务队列
 	if _, err := ctx.GetObject([]byte(TASK_QUEUE)); err != nil {
 		q := initQueue()
-		qStr, err := json.Marshal(q)
-		if err != nil {
-			return code.Error(err)
-		}
+		qStr, _ := json.Marshal(q)
 		if err := ctx.PutObject([]byte(TASK_QUEUE), qStr); err != nil {
 			return code.Error(err)
 		}
@@ -85,10 +82,7 @@ func (cfa *carFileAsset) Initialize(ctx code.Context) code.Response{
 	//初始化元数据字典
 	if _, err := ctx.GetObject([]byte(META)); err != nil {
 		metaMap := map[string][]byte{}
-		metaMapByte, err := json.Marshal(metaMap)
-		if err != nil {
-			return code.Error(err)
-		}
+		metaMapByte, _ := json.Marshal(metaMap)
 		if err := ctx.PutObject([]byte(META), metaMapByte); err != nil {
 			return code.Error(err)
 		}
@@ -96,10 +90,7 @@ func (cfa *carFileAsset) Initialize(ctx code.Context) code.Response{
 	//初始化结果字典
 	if _, err := ctx.GetObject([]byte(RESULT)); err != nil {
 		resultMap := map[string][]byte{}
-		resultMapByte, err := json.Marshal(resultMap)
-		if err != nil {
-			return code.Error(err)
-		}
+		resultMapByte, _ := json.Marshal(resultMap)
 		if err := ctx.PutObject([]byte(META), resultMapByte); err != nil {
 			return code.Error(err)
 		}
@@ -130,14 +121,14 @@ func (cfa *carFileAsset) Query(ctx code.Context) code.Response{
 
 	//根据Id查询元数据
 	metaMapByte, err := ctx.GetObject([]byte(META))
+	if err != nil {
+		return code.Error(err)
+	}
 	metaMap := map[string][]byte{}
 	if err := json.Unmarshal(metaMapByte, &metaMap); err != nil {
 		return code.Error(err)
 	}
 	data := metaMap[args.Id]
-	if err != nil {
-		return code.Error(err)
-	}
 	//调用代理合约进行查询
 	task := queryTask{
 		Id: args.Id,
@@ -146,7 +137,7 @@ func (cfa *carFileAsset) Query(ctx code.Context) code.Response{
 	if err := cfa.QueryAgentAccept(ctx, task); err != nil {
 		return code.Error(err)
 	}
-	return code.OK([]byte("call agent query contract successfully"))
+	return code.OK([]byte(args.Id))
 }
 
 
@@ -169,18 +160,12 @@ func (cfa *carFileAsset) QueryAgentAccept(ctx code.Context, task queryTask) erro
 	//新查询任务进队
 	q.Enqueue(task.Id)
 	//新队列上链
-	qByte, err = json.Marshal(q)
-	if err != nil {
-		return err
-	}
+	qByte, _ = json.Marshal(q)
 	if err := ctx.PutObject([]byte(TASK_QUEUE), qByte); err != nil {
 		return err
 	}
 	//触发查询事件
-	taskByte, err := json.Marshal(task)
-	if err != nil {
-		return err
-	}
+	taskByte, _ := json.Marshal(task)
 	if err := ctx.EmitEvent("queryEvent", taskByte); err != nil {
 		return err
 	}
@@ -218,10 +203,7 @@ func (cfa *carFileAsset) QueryCallBack(ctx code.Context) code.Response {
 	//添加预言机返还结果
 	resultMap[args.Id] = []byte(args.Data)
 	//传回链上
-	resultMapByte, err = json.Marshal(resultMap)
-	if err != nil {
-		return code.Error(err)
-	}
+	resultMapByte, _ = json.Marshal(resultMap)
 	if err := ctx.PutObject([]byte(RESULT), resultMapByte); err != nil {
 		return code.Error(err)
 	}
@@ -237,10 +219,7 @@ func (cfa *carFileAsset) QueryCallBack(ctx code.Context) code.Response {
 	//出队
 	finishedId := fmt.Sprintf("%v", q.Dequeue())
 	//新队列上链
-	qByte, err = json.Marshal(q)
-	if err != nil {
-		return code.Error(err)
-	}
+	qByte, _ = json.Marshal(q)
 	if err := ctx.PutObject([]byte(TASK_QUEUE), qByte); err != nil {
 		return code.Error(err)
 	}
@@ -278,10 +257,7 @@ func (cfa *carFileAsset) ComputingShare(ctx code.Context) code.Response{
 		Round: args.Round,
 		Epoch: args.Epoch,
 	}
-	faderatedByte, err := json.Marshal(faderated)
-	if err != nil {
-		return code.Error(err)
-	}
+	faderatedByte, _ := json.Marshal(faderated)
 	data := faderatedAIData{
 		Id: args.Id,
 		MetaDataByte: metaDataByte,
@@ -314,18 +290,12 @@ func (cfa *carFileAsset) ComputingShareAgent(ctx code.Context, data faderatedAID
 	//新任务入队
 	q.Enqueue(data.Id)
 	//任务队列上链
-	qByte, err = json.Marshal(q)
-	if err != nil {
-		return err
-	}
+	qByte, _ = json.Marshal(q)
 	if err := ctx.PutObject([]byte(TASK_QUEUE), qByte); err != nil {
 		return err
 	}
 	//触发计算共享任务
-	dataByte, err := json.Marshal(data)
-	if err != nil {
-		return err
-	}
+	dataByte, _ := json.Marshal(data)
 	if err := ctx.EmitEvent("computingShareEvent", dataByte); err != nil {
 		return err
 	}
@@ -361,7 +331,7 @@ func (cfa *carFileAsset) ComputingCallBack(ctx code.Context) code.Response {
 		return code.Error(err)
 	}
 	resultMap[args.Id] = []byte(args.FaderatedAIResult)
-	resultMapByte, err = json.Marshal(resultMap)
+	resultMapByte, _ = json.Marshal(resultMap)
 	if err := ctx.PutObject([]byte(RESULT), resultMapByte); err != nil {
 		return code.Error(err)
 	}
@@ -378,10 +348,7 @@ func (cfa *carFileAsset) ComputingCallBack(ctx code.Context) code.Response {
 	//出队
 	finishedId := fmt.Sprintf("%v", q.Dequeue())
 	//新队列上链
-	qByte, err = json.Marshal(q)
-	if err != nil {
-		return code.Error(err)
-	}
+	qByte, _ = json.Marshal(q)
 	if err := ctx.PutObject([]byte(TASK_QUEUE), qByte); err != nil {
 		return code.Error(err)
 	}
@@ -403,12 +370,11 @@ func (cfa *carFileAsset) CreateCfa(ctx code.Context) code.Response{
 	}
 	//获取id数量并加1
 	countByte, err := ctx.GetObject([]byte(CAR_FILE_ASSET_COUNT))
-	if err != nil {
-		return code.Error(err)
+	count := 0
+	if err == nil {
+		count, _ = strconv.Atoi(string(countByte))
 	}
-	count, _ := strconv.Atoi(string(countByte))
-	newCount := count +1
-	newId := CAR_FILE_ASSET_ID + strconv.Itoa(newCount)
+	newId := CAR_FILE_ASSET_ID + strconv.Itoa(count+1)
 	//json-->string-->[]byte
 	data := metaData{
 		Uploader: 	args.Uploader,
@@ -426,18 +392,15 @@ func (cfa *carFileAsset) CreateCfa(ctx code.Context) code.Response{
 	}
 	metaMap := map[string][]byte{}
 	metaMap[newId] = dataByte
-	metaMapByte, err = json.Marshal(metaMap)
-	if err != nil {
-		return code.Error(err)
-	}
-	if err := ctx.PutObject([]byte(newId), metaMapByte); err != nil {
+	metaMapByte, _ = json.Marshal(metaMap)
+	if err := ctx.PutObject([]byte(META), metaMapByte); err != nil {
 		return code.Error(err)
 	}
 	//更新id数量
-	if err := ctx.PutObject([]byte(CAR_FILE_ASSET_COUNT), []byte(strconv.Itoa(newCount))); err != nil {
+	if err := ctx.PutObject([]byte(CAR_FILE_ASSET_COUNT), []byte(strconv.Itoa(count+1))); err != nil {
 		return code.Error(err)
 	}
-	return code.OK([]byte(strconv.Itoa(newCount)))
+	return code.OK([]byte(newId))
 }
 
 
@@ -474,10 +437,7 @@ func (cfa *carFileAsset) UpdateCfa(ctx code.Context) code.Response {
 		return code.Error(err)
 	}
 	metaMap[args.Id] = newDataByte
-	metaMapByte, err = json.Marshal(metaMap)
-	if err != nil {
-		return code.Error(err)
-	}
+	metaMapByte, _ = json.Marshal(metaMap)
 	if err := ctx.PutObject([]byte(META), metaMapByte); err != nil {
 		return code.Error(err)
 	}
