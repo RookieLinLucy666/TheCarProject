@@ -3,6 +3,7 @@ package main
 import (
 	"github.com/TheCarProject/oracle/xuperchain"
 	jsoniter "github.com/json-iterator/go"
+	"time"
 )
 
 const (
@@ -31,12 +32,17 @@ func init() {
   @Description: 开启客户端节点
 **/
 func main() {
-
-	//xuperchain.DeployContract()
-	//xuperchain.InvokeCreateCfa()
-	xuperchain.InvokeQuery()
+	//xuperchain.CreateAccount()
+	//xuperchain.CreateContractAccount()
+	xuperchain.DeployContract()
+	id := xuperchain.InvokeCreateCfa()
+	xuperchain.InvokeQuery(id)
 	xuperchain.ListenQueryEvent()
-
+	xuperchain.InvokeQueryCallback(id)
+	time.Sleep(time.Second * 3)
+	xuperchain.InvokeComputingShare(id)
+	xuperchain.ListenComputingShareEvent()
+	xuperchain.InvokeComputingCallBack(id)
 
 
 	//for i := 0; i < NodeCount; i++ {

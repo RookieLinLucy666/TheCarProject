@@ -27,5 +27,9 @@ conda activate test
 
 在首次运行时，由于需要下载数据集，花费的时间较长。
 
+# 合约编译
+
+先在`contract`中运行`go build -o contract`编译合约，将生成的可执行文件`contract`拷贝到`oracle/contract`中。
+
 # 预言机运行
 配置好上述命令后，在`main.go`文件中修改相关的参数，在`oracle`目录下运行`go run *.go`即可运行。

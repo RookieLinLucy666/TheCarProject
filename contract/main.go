@@ -91,7 +91,7 @@ func (cfa *carFileAsset) Initialize(ctx code.Context) code.Response{
 	if _, err := ctx.GetObject([]byte(RESULT)); err != nil {
 		resultMap := map[string][]byte{}
 		resultMapByte, _ := json.Marshal(resultMap)
-		if err := ctx.PutObject([]byte(META), resultMapByte); err != nil {
+		if err := ctx.PutObject([]byte(RESULT), resultMapByte); err != nil {
 			return code.Error(err)
 		}
 	}
@@ -179,7 +179,7 @@ func (cfa *carFileAsset) QueryAgentAccept(ctx code.Context, task queryTask) erro
  * @Date 2021/9/15
  * @Description 域内共享与跨域共享回调合约，负责验证回调数据、回调结果上链、任务队列出队
 				——————验证部分未写——————
- */
+*/
 func (cfa *carFileAsset) QueryCallBack(ctx code.Context) code.Response {
 	//接收参数
 	args := struct {
@@ -246,8 +246,12 @@ func (cfa *carFileAsset) ComputingShare(ctx code.Context) code.Response{
 		return code.Error(err)
 	}
 	//根据Id查询元数据
-	metaDataByte, err := ctx.GetObject([]byte(args.Id))
+	metaMapByte, err := ctx.GetObject([]byte(META))
 	if err != nil {
+		return code.Error(err)
+	}
+	metaMap := map[string][]byte{}
+	if err := json.Unmarshal(metaMapByte, &metaMap); err != nil {
 		return code.Error(err)
 	}
 	//构造传入代理合约数据格式
@@ -260,7 +264,7 @@ func (cfa *carFileAsset) ComputingShare(ctx code.Context) code.Response{
 	faderatedByte, _ := json.Marshal(faderated)
 	data := faderatedAIData{
 		Id: args.Id,
-		MetaDataByte: metaDataByte,
+		MetaDataByte: metaMap[args.Id],
 		FaderatedAIDemandByte: faderatedByte,
 	}
 	//调用代理合约
@@ -309,7 +313,7 @@ func (cfa *carFileAsset) ComputingShareAgent(ctx code.Context, data faderatedAID
  * @Date 2021/9/16
  * @Description 计算共享回调合约，负责验证身份、结果上链、任务队列出队
 				——————验证内容未编写——————
- */
+*/
 func (cfa *carFileAsset) ComputingCallBack(ctx code.Context) code.Response {
 	//接收参数
 	args := struct {

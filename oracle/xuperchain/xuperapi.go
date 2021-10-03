@@ -1,258 +1,121 @@
 package xuperchain
 
 import (
+	"encoding/base64"
+	"encoding/json"
 	"fmt"
 	"github.com/xuperchain/xuper-sdk-go/v2/account"
 	"github.com/xuperchain/xuper-sdk-go/v2/xuper"
+	"io"
 	"io/ioutil"
+	"log"
+	"strings"
 	"time"
 )
 
 const (
-	Mnemonic = "钢 车 稀 叔 送 扫 永 确 描 当 矮 北"
-	Address = "jPSFQjS6jwMi8tU8F2EFLAiWXpMGno4FU"
-	Contract_Addr = "XC1234567890111112@xuper"
-	Contract_Name = "SDKNativeCount3"
-	CAR_FILE_ASSET_ID	=	"CarFileAssetId_"
+	Address = "ezDq8L2yHpqTSmKFs3HCiFmVELN67hFF3"
+	Contract_Addr = "XC1234567890111113@xuper"
+	Contract_Name = "SDKNativeCount16"
+	Mnemonic = "抱 丙 德 斯 伐 珠 凸 踏 杆 寻 宣 取"
 )
 
+
+//var Mnemonic string
+
+type OnChainEvent struct {
+	Id string	`json:"id"`
+	Metadata string `json:"meta_data_byte"`
+	FaderatedAIDemandByte string `json:"faderated_ai_demand_byte"`
+}
+
+
+type Metadata struct {
+	Uploader	string `json:"uploader"`
+	Name 		string `json:"name"`
+	Type		string `json:"type"`
+	Ip			string `json:"ip"`
+	Route		string	`json:"route"`
+	Abstract	string	`json:"abstract"`
+}
+
+type FederatedAIDemand struct {
+	Model 		string `json:"model"`
+	Dataset 	string `json:"dataset"`
+	Round 		string `json:"round"`
+	Epoch 		string `json:"epoch"`
+}
 
 /**
   CreateAccount
   @Description: 创建账户
+	命令行转钱：
+	./xchain-cli transfer --to ezDq8L2yHpqTSmKFs3HCiFmVELN67hFF3 --amount 100000000 --keys data/keys/ -H 127.0.0.1:37101
 **/
-func CreateAccount() {
-	var acc *account.Account
-	var err error
-	// 测试创建账户
-	acc, err = account.CreateAccount(1, 1)
-	if err != nil {
-		fmt.Printf("create account error: %v\n", err)
-	}
-	fmt.Println(acc)
-	fmt.Println(acc.Mnemonic)
-
-	// 测试恢复账户
-	acc, err = account.RetrieveAccount("钢 车 稀 叔 送 扫 永 确 描 当 矮 北}", 1)
-	if err != nil {
-		fmt.Printf("retrieveAccount err: %v\n", err)
-		return
-	}
-	fmt.Printf("RetrieveAccount: to %v\n", acc)
-
-	// 创建账户并存储到文件中
-	acc, err = account.CreateAndSaveAccountToFile("./keys", "123", 1, 1)
-	if err != nil {
-		fmt.Printf("createAndSaveAccountToFile err: %v\n", err)
-	}
-	fmt.Printf("CreateAndSaveAccountToFile: %v\n", acc)
-
-	// 从文件中恢复账户
-	acc, err = account.GetAccountFromFile("keys/", "123")
-	if err != nil {
-		fmt.Printf("getAccountFromFile err: %v\n", err)
-	}
-	fmt.Printf("getAccountFromFile: %v\n", acc)
-	return
-}
+//func CreateAccount() {
+//	var acc *account.Account
+//	var err error
+//	// 测试创建账户
+//	acc, err = account.CreateAccount(1, 1)
+//	if err != nil {
+//		fmt.Printf("create account error: %v\n", err)
+//	}
+//	fmt.Println(acc)
+//	fmt.Println(acc.Mnemonic)
+//
+//	Mnemonic = acc.Mnemonic
+//
+//	//// 测试恢复账户
+//	//acc, err = account.RetrieveAccount("钢 车 稀 叔 送 扫 永 确 描 当 矮 北}", 1)
+//	//if err != nil {
+//	//	fmt.Printf("retrieveAccount err: %v\n", err)
+//	//	return
+//	//}
+//	//fmt.Printf("RetrieveAccount: to %v\n", acc)
+//	//
+//	//// 创建账户并存储到文件中
+//	//acc, err = account.CreateAndSaveAccountToFile("./keys", "123", 1, 1)
+//	//if err != nil {
+//	//	fmt.Printf("createAndSaveAccountToFile err: %v\n", err)
+//	//}
+//	//fmt.Printf("CreateAndSaveAccountToFile: %v\n", acc)
+//	//
+//	//// 从文件中恢复账户
+//	//acc, err = account.GetAccountFromFile("keys/", "123")
+//	//if err != nil {
+//	//	fmt.Printf("getAccountFromFile err: %v\n", err)
+//	//}
+//	//fmt.Printf("getAccountFromFile: %v\n", acc)
+//	return
+//}
 
 /**
   CreateContractAccount
-  @Description:
-	创建合约账户
-	命令行创建合约账号：./xchain-cli account new --account 1234567890111111 --fee 1000
-	生成的账户：XC1111111111111111@xuper
-	在创建合约账号之前，需要给账户转钱，才能支付手续费（记得修改地址）
-	命令行运行：./xchain-cli transfer --to jPSFQjS6jwMi8tU8F2EFLAiWXpMGno4FU --amount 100000000 --keys data/keys/ -H 127.0.0.1:37101
-	XC1111111111111111@xuper对应的account的助记词为巴 碱 仿 幼 浸 知 讼 朋 蒸 邵 雄 即
+  @Description: 创建合约账户
+	命令行给合约账户转钱：
+	./xchain-cli transfer --to XC1234567890111113@xuper --amount 1000000000000
 **/
-func CreateContractAccount() {
-	// 从文件中恢复账户
-	acc, err := account.RetrieveAccount(Mnemonic, 1)
-	if err != nil {
-		fmt.Printf("retrieveAccount err: %v\n", err)
-		return
-	}
-	fmt.Printf("RetrieveAccount: to %v\n", acc)
-
-	// 创建一个合约账户
-	// 合约账户是由 (XC + 16个数字 + @xuper) 组成, 比如 "XC1234567890123456@xuper"
-	contractAccount := Contract_Addr
-
-	xchainClient, err := xuper.New("127.0.0.1:37101")
-	tx, err := xchainClient.CreateContractAccount(acc, contractAccount)
-	if err != nil {
-		fmt.Printf("createContractAccount err:%s\n", err.Error())
-	}
-	fmt.Println(tx.Tx.Txid)
-	return
-}
-
-/**
-  akTransfer
-  @Description: 普通账户转账
-  @param to 目的账户
-  @param amount 金额
-**/
-func akTransfer(to *account.Account, amount string) {
-	// 创建或者使用已有账户，此处为使用已有账户。
-	// 恢复账户
-	//nuSMPvo6UUoTaT8mMQmHbfiRbJNbAymGh
-	//./xchain-cli transfer --to nuSMPvo6UUoTaT8mMQmHbfiRbJNbAymGh --amount 1000000000000 --keys data/keys/ -H 127.0.0.1:37101
-	from, err := account.RetrieveAccount(Mnemonic, 1)
-	if err != nil {
-		fmt.Printf("retrieveAccount err: %v\n", err)
-		return
-	}
-	fmt.Printf("RetrieveAccount: to %v\n", from)
-
-	//to, err := account.CreateAccount(1, 1)
-	//if err != nil {
-	//	panic(err)
-	//}
-	//fmt.Println(to.Address)
-	//fmt.Println(to.Mnemonic)
-
-	// 节点地址。
-	node := "127.0.0.1:37101"
-
-	// 创建节点客户端。
-	xclient, _ := xuper.New(node)
-
-	// 转账前查看两个地址余额。
-	fmt.Println(xclient.QueryBalance(from.Address))
-	fmt.Println(xclient.QueryBalance(to.Address))
-
-	tx, err := xclient.Transfer(from, to.Address, amount)
-	if err != nil {
-		panic(err)
-	}
-	fmt.Printf("%x\n", tx.Tx.Txid)
-
-	// 转账后查看两个地址余额。
-	fmt.Println(xclient.QueryBalance(from.Address))
-	fmt.Println(xclient.QueryBalance(to.Address))
-}
-
-/**
-  contractAccountTransfer
-  @Description:
-	合约账户转账
-	命令行给合约账户转账：./xchain-cli transfer --to XC1234567890111112@xuper --amount 1000000000000
-**/
-func contractAccountTransfer() {
-	// 创建或者使用已有账户，此处为新创建一个账户。
-	me, err := account.RetrieveAccount(Mnemonic, 1)
-	if err != nil {
-		fmt.Printf("retrieveAccount err: %v\n", err)
-		return
-	}
-	fmt.Printf("RetrieveAccount: to %v\n", me)
-
-	//me, err := account.CreateAccount(1, 1)
-	//if err != nil {
-	//	panic(err)
-	//}
-
-	akTransfer(me, "100")
-
-	// XC1234567890111111@xuper 为合约账户，如果没有合约账户需要先创建合约账户。
-	//该合约账户必须是账户生成的，否则会报错
-	me.SetContractAccount(Contract_Addr)
-	fmt.Println(me.Address)
-	fmt.Println(me.Mnemonic)
-	fmt.Println(me.GetContractAccount())
-	fmt.Println(me.GetAuthRequire())
-
-	to, err := account.CreateAccount(1, 1)
-	if err != nil {
-		panic(err)
-	}
-	fmt.Println(to.Address)
-	fmt.Println(to.Mnemonic)
-
-	// 节点地址。
-	node := "127.0.0.1:37101"
-	xclient, _ := xuper.New(node)
-
-	// 转账前查看两个地址余额。
-	fmt.Println(xclient.QueryBalance(me.GetContractAccount()))
-	fmt.Println(xclient.QueryBalance(to.Address))
-
-	tx, err := xclient.Transfer(me, to.Address, "10")
-	if err != nil {
-		panic(err)
-	}
-	fmt.Printf("%x\n", tx.Tx.Txid)
-
-	// 转账后查看两个地址余额。
-	fmt.Println(xclient.QueryBalance(me.GetContractAccount())) // 转账时使用的是合约账户，因此查询余额时也是合约账户。
-	fmt.Println(xclient.QueryBalance(to.Address))
-}
-
-/**
-  QueryBlockByHeight
-  @Description: 根据区块高度查询区块信息
-  @param height 区块高度
-**/
-func QueryBlockByHeight(height int64) {
-	// 示例代码省略了 err 的检查。
-	node := "127.0.0.1:37101"
-	xclient, _ := xuper.New(node)
-	blockResult, _ := xclient.QueryBlockByHeight(height)
-	if blockResult.GetHeader().GetError() != 0 {
-		// 处理错误。
-	} else {
-		// 处理区块数据。
-		block := blockResult.GetBlock()
-		fmt.Println(block.GetBlockid())
-		fmt.Println(block.GetHeight())
-		fmt.Println(block.GetTxCount())
-		fmt.Println(block.Transactions)
-	}
-}
-
-/**
-  QueryTxByID
-  @Description: 根据交易ID查询交易
-  @param txID 交易ID
-**/
-func QueryTxByID(txID string) {
-	node := "127.0.0.1:37101"
-	xclient, _ := xuper.New(node)
-
-	output, _ := xclient.QueryTxByID(txID)
-	outputExt := output.GetTxOutputsExt()
-	// 输出合约事件内容
-	fmt.Println(string(outputExt[0].Key))
-	fmt.Println(string(outputExt[0].Value))
-}
-
-/**
-  QueryBalance
-  @Description: 查询账户余额
-**/
-func QueryBalance() {
-	// 示例代码省略了 err 的检查。
-	node := "127.0.0.1:37101"
-	xclient, _ := xuper.New(node)
-
-	// 查询账户余额，默认 xuper 链。
-	bal, _ := xclient.QueryBalance(Contract_Addr)
-	fmt.Println(bal)
-
-	//// 查询账户余额，在 hello 链。
-	//bal, _ = xclient.QueryBalance("nuSMPvo6UUoTaT8mMQmHbfiRbJNbAymGh", xuper.WithQueryBcname("hello"))
-	//fmt.Println(bal)
-	//
-	//// 查询账户余额详细数据
-	//balDetails, _ := xclient.QueryBalanceDetail("nuSMPvo6UUoTaT8mMQmHbfiRbJNbAymGh")
-	//for _, bd := range balDetails {
-	//	fmt.Println(bd.Balance)
-	//	fmt.Println(bd.IsFrozen)
-	//}
-
-}
+//func CreateContractAccount() {
+//	// 从文件中恢复账户
+//	acc, err := account.RetrieveAccount(Mnemonic, 1)
+//	if err != nil {
+//		fmt.Printf("retrieveAccount err: %v\n", err)
+//		return
+//	}
+//	fmt.Printf("RetrieveAccount: to %v\n", acc)
+//
+//	// 创建一个合约账户
+//	// 合约账户是由 (XC + 16个数字 + @xuper) 组成, 比如 "XC1234567890123456@xuper"
+//	contractAccount := Contract_Addr
+//
+//	xchainClient, err := xuper.New("127.0.0.1:37101")
+//	tx, err := xchainClient.CreateContractAccount(acc, contractAccount)
+//	if err != nil {
+//		fmt.Printf("createContractAccount err:%s\n", err.Error())
+//	}
+//	fmt.Println(tx.Tx.Txid)
+//	return
+//}
 
 func getAccount() *account.Account{
 	account, err := account.RetrieveAccount(Mnemonic, 1)
@@ -260,7 +123,7 @@ func getAccount() *account.Account{
 		fmt.Printf("retrieveAccount err: %v\n", err)
 		return nil
 	}
-	fmt.Printf("retrieveAccount address: %v\n", account.Address)
+	//fmt.Printf("retrieveAccount address: %v\n", account.Address)
 	contractAccount := Contract_Addr
 	err = account.SetContractAccount(contractAccount)
 	if err != nil {
@@ -303,7 +166,7 @@ func DeployContract() {
   InvokeCreateCfa
   @Description: 链下调用CreateCfa(创建任务id)
 **/
-func InvokeCreateCfa() {
+func InvokeCreateCfa() string{
 	account := getAccount()
 
 	contractName := Contract_Name
@@ -325,14 +188,15 @@ func InvokeCreateCfa() {
 	if err != nil {
 		panic(err)
 	}
-	fmt.Printf("Invoke Native Go Contract Success! %x\n", tx.Tx.GetTxOutputsExt()[0].GetValue())
+	fmt.Printf(string(tx.ContractResponse.Body))
+	return string(tx.ContractResponse.Body)
 }
 
 /**
   Query
   @Description: 链下调用Query(数据协同的调用)
 **/
-func InvokeQuery() {
+func InvokeQuery(id string) {
 	account := getAccount()
 
 	contractName := Contract_Name
@@ -341,8 +205,8 @@ func InvokeQuery() {
 		panic(err)
 	}
 	args := map[string]string{
-		"id": CAR_FILE_ASSET_ID + "36",
-		"Inquirer":     "xuperchain",
+		"id": id,
+		"inquirer":     "xuperchain",
 		"expiration": "1000",
 	}
 
@@ -388,7 +252,7 @@ func ListenQueryEvent() error{
 			//fmt.Printf("%+v\n", b)
 			//QueryBlockByHeight(b.BlockHeight)
 			if len(b.Txs) != 0 {
-				QueryTxByID(b.Txs[0].Txid)
+				QueryTxByID("queryEvent", b.Txs[0].Txid)
 			}
 		}
 	}()
@@ -401,7 +265,7 @@ func ListenQueryEvent() error{
 	return nil
 }
 
-func InvokeQueryCallback() {
+func InvokeQueryCallback(id string) {
 	account := getAccount()
 
 	contractName := Contract_Name
@@ -410,20 +274,20 @@ func InvokeQueryCallback() {
 		panic(err)
 	}
 	args := map[string]string{
-		"id": "36",
-		"data":     "36.5",
+		"id": id,
+		"data": "965",
 		"asig": "1000",
-		"pks": "xxxx",
+		"pks": "bc",
 	}
 
 	var tx *xuper.Transaction
 
-	tx, err = xchainClient.InvokeNativeContract(account, contractName, "QueryCallBack", args)
+	tx, err = xchainClient.InvokeNativeContract(account, contractName, "Query", args)
 	if err != nil {
 		panic(err)
 	}
 	if tx != nil {
-		fmt.Printf("Invoke Native Go Contract Success! %x\n", tx.Tx.GetTxOutputsExt()[0].GetValue())
+		fmt.Printf("查询结果：%s\n", tx.ContractResponse.Body)
 	}
 }
 
@@ -431,7 +295,7 @@ func InvokeQueryCallback() {
   InvokeComputingShare
   @Description: 调用ComputingShare合约
 **/
-func InvokeComputingShare() {
+func InvokeComputingShare(id string) {
 	account := getAccount()
 
 	contractName := Contract_Name
@@ -440,8 +304,8 @@ func InvokeComputingShare() {
 		panic(err)
 	}
 	args := map[string]string{
-		"id": "36",
-		"model":     "cnn",
+		"id": id,
+		"model": "cnn",
 		"dataset": "mnist",
 		"round": "2",
 		"epoch": "2",
@@ -454,7 +318,7 @@ func InvokeComputingShare() {
 		panic(err)
 	}
 	if tx != nil {
-		fmt.Printf("Invoke Native Go Contract Success! %x\n", tx.ContractResponse.Body)
+		fmt.Printf("查询结果：%s\n", tx.ContractResponse.Body)
 	}
 }
 
@@ -489,7 +353,7 @@ func ListenComputingShareEvent() error{
 			//fmt.Printf("%+v\n", b)
 			//QueryBlockByHeight(b.BlockHeight)
 			if len(b.Txs) != 0 {
-				QueryTxByID(b.Txs[0].Txid)
+				QueryTxByID("computingShareEvent", b.Txs[0].Txid)
 			}
 		}
 	}()
@@ -502,7 +366,7 @@ func ListenComputingShareEvent() error{
 	return nil
 }
 
-func InvokeComputingCallBack() {
+func InvokeComputingCallBack(id string) {
 	account := getAccount()
 
 	contractName := Contract_Name
@@ -511,7 +375,7 @@ func InvokeComputingCallBack() {
 		panic(err)
 	}
 	args := map[string]string{
-		"id": "36",
+		"id": id,
 		"faderated_ai_result":     "96.5",
 		"asig": "1000",
 		"pks": "xxxx",
@@ -529,47 +393,128 @@ func InvokeComputingCallBack() {
 }
 
 /**
-  ListenEvent
-  @Description: 监听合约事件
-  @return error
+  QueryTxByID
+  @Description: 根据交易ID查询交易
+  @param txID 交易ID
 **/
-func ListenEvent() error{
-	// 创建节点客户端。
-	client, err := xuper.New("127.0.0.1:37101")
-	if err != nil {
-		return err
+func QueryTxByID(eventType string, txID string) {
+	node := "127.0.0.1:37101"
+	xclient, _ := xuper.New(node)
+
+	output, _ := xclient.QueryTxByID(txID)
+	outputExt := output.GetTxOutputsExt()
+
+	event := strings.Split(string(outputExt[0].Value),"\n")
+
+	if eventType == "queryEvent" {
+		queryEvent := event[2][13:]
+		abstractQueryEvent(queryEvent)
 	}
 
-	// 监听时间，返回 Watcher，通过 Watcher 中的 channel 获取block。
-	//过滤掉空数据
-	//watcher, err := client.WatchBlockEvent(xuper.WithSkipEmplyTx())
-	//通过事件名称去过滤
-	watcher, err := client.WatchBlockEvent(xuper.WithEventName("increase"))
-	if err != nil {
-		return err
+	if eventType == "computingShareEvent" {
+		computingShareEvent := event[1][41:]
+		abstractComputingEvent(computingShareEvent)
 	}
 
-	go func() {
-		for {
-			b, ok := <-watcher.FilteredBlockChan
-			if !ok {
-				fmt.Println("watch block event channel closed.")
-				return
-			}
-			//fmt.Printf("%+v\n", b)
-			//QueryBlockByHeight(b.BlockHeight)
-			if len(b.Txs) != 0 {
-				QueryTxByID(b.Txs[0].Txid)
-			}
-		}
-	}()
 
-	time.Sleep(time.Second * 3)
-
-	// 关闭监听。
-	watcher.Close()
-	client.Close()
-	return nil
 }
+
+/**
+  abstractQueryEvent
+  @Description: 从http response中抽取数据协同事件内容
+  @param event
+**/
+func abstractQueryEvent(event string) {
+
+	var e OnChainEvent
+	dec := json.NewDecoder(strings.NewReader(event))
+	for {
+		if err := dec.Decode(&e); err == io.EOF {
+			break
+		} else if err != nil {
+			log.Fatal(err)
+		}
+		//fmt.Println(e.Metadata)
+	}
+
+	sDec, err := base64.StdEncoding.DecodeString(e.Metadata)
+	if err != nil {
+		fmt.Printf("Error decoding string: %s ", err.Error())
+		return
+	}
+
+	//fmt.Println(string(sDec))
+
+	var meta Metadata
+	meta_decode := json.NewDecoder(strings.NewReader(string(sDec)))
+	for {
+		if err := meta_decode.Decode(&meta); err == io.EOF {
+			break
+		} else if err != nil {
+			log.Fatal(err)
+		}
+		fmt.Println(meta)
+	}
+}
+
+/**
+  abstractComputingEvent
+  @Description: 从http response中抽取计算协同事件内容
+  @param event
+  @return Metadata
+  @return FederatedAIDemand
+**/
+func abstractComputingEvent(event string) (Metadata, FederatedAIDemand){
+	var e OnChainEvent
+	dec := json.NewDecoder(strings.NewReader(event))
+	for {
+		if err := dec.Decode(&e); err == io.EOF {
+			break
+		} else if err != nil {
+			log.Fatal(err)
+		}
+		//fmt.Println(e.Metadata)
+	}
+
+	metadata, err := base64.StdEncoding.DecodeString(e.Metadata)
+	if err != nil {
+		fmt.Printf("Error decoding string: %s ", err.Error())
+		return Metadata{}, FederatedAIDemand{}
+	}
+	//fmt.Println(string(metadata))
+
+	federate, err := base64.StdEncoding.DecodeString(e.FaderatedAIDemandByte)
+	if err != nil {
+		fmt.Printf("Error decoding string: %s ", err.Error())
+		return Metadata{}, FederatedAIDemand{}
+	}
+	//fmt.Println(string(federate))
+
+	var meta Metadata
+	meta_decode := json.NewDecoder(strings.NewReader(string(metadata)))
+	for {
+		if err := meta_decode.Decode(&meta); err == io.EOF {
+			break
+		} else if err != nil {
+			log.Fatal(err)
+		}
+		fmt.Println(meta)
+	}
+
+	var demand FederatedAIDemand
+	demand_decode := json.NewDecoder(strings.NewReader(string(federate)))
+	for {
+		if err := demand_decode.Decode(&demand); err == io.EOF {
+			break
+		} else if err != nil {
+			log.Fatal(err)
+		}
+		fmt.Println(demand)
+	}
+
+	return meta, demand
+}
+
+
 
 
