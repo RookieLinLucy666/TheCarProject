@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"crypto/rsa"
 	"fmt"
+	"github.com/TheCarProject/oracle/xuperchain"
 	"io"
 	"net"
 	"reflect"
@@ -41,6 +42,7 @@ type NetMsg struct {
 	CrossMsg 	*CrossMsg
 	AggCrossMsg *AggCrossMsg
 	ReplyMsg        *ReplyMsg
+	ID 	string `json:"id"`
 }
 
 //<REQUEST, o, t, c>
@@ -52,6 +54,8 @@ type RequestMsg struct {
 	Local_Epoch int  `json:"local_epoch"`
 	NodeCount int 	 `json:"node_count"`
 	Groups []int 	`json:"groups"`
+	Metadata xuperchain.Metadata 	`json:"metadata"`
+	Type string `json:"type"`
 }
 
 func (msg RequestMsg) String() string {
@@ -108,7 +112,8 @@ func (msg AggMsg) String() string {
   @Description: 执行数据获取的消息
 **/
 type DataMsg struct {
-	//TODO
+	Ip string `json:"ip"`
+	Route string `json:"route"`
 }
 
 func (msg DataMsg) String() string {
@@ -121,7 +126,10 @@ func (msg DataMsg) String() string {
   @Description: 聚合数据的消息
 **/
 type AggDataMsg struct {
-	//TODO
+	NodeID     int 		`json:"node_id"`
+	BlsSig      []byte  `json:"bls_sk"`
+	BlsPK      []byte  `json:"bls_pk"`
+	Message    string	`json:"message"`
 }
 
 func (msg AggDataMsg) String() string {
@@ -134,7 +142,8 @@ func (msg AggDataMsg) String() string {
   @Description: 执行跨链请求的消息
 **/
 type CrossMsg struct {
-	//TODO
+	Ip string `json:"ip"`
+	Route string `json:"route"`
 }
 
 func (msg CrossMsg) String() string {
@@ -147,7 +156,10 @@ func (msg CrossMsg) String() string {
   @Description: 执行跨链请求的消息
 **/
 type AggCrossMsg struct {
-	//TODO
+	NodeID     int 		`json:"node_id"`
+	BlsSig      []byte  `json:"bls_sk"`
+	BlsPK      []byte  `json:"bls_pk"`
+	Message    string	`json:"message"`
 }
 
 func (msg AggCrossMsg) String() string {
@@ -156,7 +168,12 @@ func (msg AggCrossMsg) String() string {
 }
 
 type ReplyMsg struct {
+	ASig []byte `json:"a_sig"`
 	Digest string `json:"digest"`
+	PKs		[][]byte `json:"pks"`
+	Msgs   []string `json:"msgs"`
+	Type string `json:"type"`
+	ID string `json:"id"`
 }
 
 func (msg ReplyMsg) String() string {

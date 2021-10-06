@@ -2,9 +2,12 @@ package main
 
 import (
 	"fmt"
+	"github.com/TheCarProject/oracle/xuperchain"
+	"golang.org/x/crypto/bn256"
 	"io/ioutil"
 	"math"
 	"net"
+	"strconv"
 	"sync"
 	"time"
 )
@@ -36,6 +39,15 @@ func NewClient(i int32) *Client {
 		mutex:      sync.Mutex{},
 	}
 	return client
+}
+
+type CarFileAsset struct {
+	Uploader string `json:"uploader"`
+	Name string `json:"name"`
+	Type string `json:"type"`
+	Ip string	`json:"ip"`
+	Route string `json:"route"`
+	Abstract string `json:"abstract"`
 }
 
 /**
@@ -88,17 +100,45 @@ func (c *Client) handleConnection(conn net.Conn) (reply bool) {
   @receiver c
 **/
 func (c *Client) sendRequest() {
-	groups := c.generateMali()
-
-	reqmsg := &RequestMsg{
-		Dataset: Dataset,
-		Model: Model,
-		Global_Epoch: Global_Epoch,
-		Local_Epoch: Local_Epoch,
-		NodeCount: NodeCount,
-		NIID: NIID,
-		Groups: groups,
+	//groups := c.generateMali()
+	var reqmsg *RequestMsg
+	cfa := CarFileAsset{
+		Uploader: "xuperchain",
+		Name:     "counter",
+		Type:     "data", // data, cross, compute
+		Ip:       "https://pro-api.coinmarketcap.com/v1/cryptocurrency/listings/latest",
+		Route:    "xuperchain",
+		Abstract: "162accb12e079d4b805f65f7a773c5e10cf537fef5ff99fde901ef0b1c963af8",
 	}
+
+	//cfa := CarFileAsset{
+	//	Uploader: "xuperchain",
+	//	Name:     "counter",
+	//	Type:     "compute", // data, cross, compute
+	//	Ip:       "https://pro-api.coinmarketcap.com/v1/cryptocurrency/listings/latest",
+	//	Route:    "xuperchain",
+	//	Abstract: "162accb12e079d4b805f65f7a773c5e10cf537fef5ff99fde901ef0b1c963af8",
+	//}
+
+	//cfa := CarFileAsset{
+	//	Uploader: "xuperchain",
+	//	Name:     "counter",
+	//	Type:     "cross", // data, cross, compute
+	//	Ip:       "xuperchain", // 目的区块链位置
+	//	Route:    "xuperchain",
+	//	Abstract: "162accb12e079d4b805f65f7a773c5e10cf537fef5ff99fde901ef0b1c963af8",
+	//}
+	id := xuperchain.InvokeCreateCfa(cfa.Uploader, cfa.Name, cfa.Type, cfa.Ip, cfa.Route, cfa.Abstract)
+
+	switch cfa.Type {
+	case "compute":
+		reqmsg = ListenCompute(id)
+	case "data":
+		reqmsg = ListenData(id)
+	case "cross":
+		reqmsg = ListenCross(id)
+	}
+
 	sig, err := c.signMessage(reqmsg)
 	if err != nil {
 		fmt.Printf("%v\n", err)
@@ -110,12 +150,52 @@ func (c *Client) sendRequest() {
 		Signature:        sig,
 		ClientNodePubkey: c.keypair.pubkey,
 		ClientUrl:        c.url,
+		ID: id,
 	}
 	marshalMsg, _ := json.Marshal(data)
 	c.StartTime = time.Now()
 	Send(marshalMsg, c.findPrimaryNode().url)
 	//Send(ComposeMsg(hRequest, reqmsg, sig), c.findPrimaryNode().url)
 	c.request = reqmsg
+}
+
+func ListenData(id string) *RequestMsg {
+	xuperchain.InvokeQuery(id)
+	xuperchain.ListenQueryEvent()
+	metadata, _ := xuperchain.GetVariable()
+	fmt.Println(metadata)
+
+	return &RequestMsg{
+		NodeCount: NodeCount,
+		NIID: NIID,
+		Metadata: metadata,
+		Type: "data",
+	}
+
+}
+
+func ListenCross(id string) *RequestMsg{
+	return &RequestMsg{}
+}
+
+func ListenCompute(id string) *RequestMsg{
+	xuperchain.InvokeComputingShare(id, "cnn", "mnist", "2", "2")
+	xuperchain.ListenComputingShareEvent()
+	metadata, learning := xuperchain.GetVariable()
+
+	round, _ := strconv.Atoi(learning.Round)
+	epoch, _ := strconv.Atoi(learning.Epoch)
+
+	return &RequestMsg{
+		Dataset: learning.Dataset,
+		Model: learning.Model,
+		Global_Epoch: round,
+		Local_Epoch: epoch,
+		NodeCount: NodeCount,
+		NIID: NIID,
+		Metadata: metadata,
+		Type: "compute",
+	}
 }
 
 /**
@@ -126,9 +206,33 @@ func (c *Client) sendRequest() {
   @return bool
 **/
 func (c *Client) handleReply(payload []byte) bool {
-	c.EndTime = time.Now()
-	fmt.Println("Finish calculation.")
-	return true
+	var replyMsg ReplyMsg
+	err := json.Unmarshal(payload, &replyMsg)
+	if err != nil {
+		fmt.Printf("error happened:%v", err)
+		return false
+	}
+	asig, _ := new(bn256.G1).Unmarshal(replyMsg.ASig)
+	length := len(replyMsg.Msgs)
+	pks := make([]*bn256.G2,length,length)
+	for i:=0;i<length;i++{
+		pks[i],_= new(bn256.G2).Unmarshal(replyMsg.PKs[i])
+	}
+	ok := AVerify(asig,replyMsg.Msgs,pks)
+	if ok {
+		if replyMsg.Type == "compute" {
+
+		} else if replyMsg.Type == "data" {
+			xuperchain.InvokeQueryCallback(replyMsg.ID, replyMsg.Msgs[0], string(replyMsg.ASig), byte2string(replyMsg.PKs))
+			fmt.Println("Finish Query")
+		} else if replyMsg.Type == "cross" {
+
+		}
+		c.EndTime = time.Now()
+		fmt.Println("Finish calculation.")
+		return true
+	}
+	return false
 }
 
 /**

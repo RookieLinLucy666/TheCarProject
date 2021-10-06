@@ -5,7 +5,12 @@ import (
 	"crypto/rsa"
 	"fmt"
 	"golang.org/x/crypto/bn256"
+	"io/ioutil"
+	"log"
 	"math/big"
+	"net/http"
+	"net/url"
+	"os"
 	"os/exec"
 	"strconv"
 	"sync"
@@ -34,8 +39,17 @@ type Keypair struct {
 	pubkey  *rsa.PublicKey
 }
 
+/**
+  MsgLog
+  @Description: 统计各类型聚合消息
+	compute
+	data
+	cross
+**/
 type MsgLog struct {
 	aggLog map[int]map[int]bool
+	aggDataLog map[int]map[int]bool
+	aggCrossLog map[int]map[int]bool
 }
 
 
@@ -61,6 +75,8 @@ func NewNode(nodeID int) *Node {
 		make(chan []byte),
 		KnownKeypairMap[nodeID],
 		&MsgLog{
+			make(map[int]map[int]bool),
+			make(map[int]map[int]bool),
 			make(map[int]map[int]bool),
 		},
 		make(map[string]*RequestMsg),
@@ -95,15 +111,15 @@ func (node *Node) handleMsg() {
 		case hTrain:
 			node.handleTrain(netMsg.TrainMsg, netMsg.Signature, netMsg.ClientUrl)
 		case hAgg:
-			node.handleAgg(netMsg.AggMsg, netMsg.Signature, netMsg.ClientUrl)
+			node.handleAgg(netMsg.AggMsg, netMsg.Signature, netMsg.ClientUrl, netMsg.ID)
 		case hData:
 			node.handleData(netMsg.DataMsg, netMsg.Signature, netMsg.ClientUrl)
 		case hAggData:
-			node.handleAggData(netMsg.AggDataMsg, netMsg.Signature, netMsg.ClientUrl)
+			node.handleAggData(netMsg.AggDataMsg, netMsg.Signature, netMsg.ClientUrl, netMsg.ID)
 		case hCross:
 			node.handleCross(netMsg.CrossMsg, netMsg.Signature, netMsg.ClientUrl)
 		case hAggCross:
-			node.handleAggCross(netMsg.AggCrossMsg, netMsg.Signature, netMsg.ClientUrl)
+			node.handleAggCross(netMsg.AggCrossMsg, netMsg.Signature, netMsg.ClientUrl, netMsg.ID)
 		}
 	}
 }
@@ -118,30 +134,72 @@ func (node *Node) handleMsg() {
   @param clientNodeUrl
 **/
 func (node *Node) handleRequest(request *RequestMsg, sig []byte, clientNodePubkey *rsa.PublicKey, clientNodeUrl string) {
-	var trainMsg TrainMsg
+	var data *NetMsg
+	taskType := request.Type
 
-	trainMsg = TrainMsg{
-		Dataset: request.Dataset,
-		Model: request.Model,
-		Gloabl_Epoch: request.Global_Epoch,
-		Local_Epoch: request.Local_Epoch,
-		NodeCount: request.NodeCount,
-		NIID: request.NIID,
-		Groups: request.Groups,
+	if taskType == "compute" {
+		var trainMsg TrainMsg
+		trainMsg = TrainMsg{
+			Dataset: request.Dataset,
+			Model: request.Model,
+			Gloabl_Epoch: request.Global_Epoch,
+			Local_Epoch: request.Local_Epoch,
+			NodeCount: request.NodeCount,
+			NIID: request.NIID,
+			Groups: request.Groups,
+		}
+
+		msgSig, err := node.signMessage(trainMsg)
+		if err != nil {
+			fmt.Printf("%v\n", err)
+			return
+		}
+		data = &NetMsg{
+			Header:        hTrain,
+			TrainMsg: &trainMsg,
+			Signature:     msgSig,
+			ClientUrl:     clientNodeUrl,
+		}
+	} else if taskType == "data"{
+		var dataMsg DataMsg
+		metadata := request.Metadata
+		dataMsg = DataMsg{
+			Ip:    metadata.Ip,
+			Route: metadata.Route,
+		}
+
+		msgSig, err := node.signMessage(dataMsg)
+		if err != nil {
+			fmt.Printf("%v\n", err)
+			return
+		}
+		data = &NetMsg{
+			Header:        hData,
+			DataMsg: &dataMsg,
+			Signature:     msgSig,
+			ClientUrl:     clientNodeUrl,
+		}
+	} else {
+		var crossMsg CrossMsg
+		metadata := request.Metadata
+		crossMsg = CrossMsg{
+			Ip:    metadata.Ip,
+			Route: metadata.Route,
+		}
+
+		msgSig, err := node.signMessage(crossMsg)
+		if err != nil {
+			fmt.Printf("%v\n", err)
+			return
+		}
+		data = &NetMsg{
+			Header:        hCross,
+			CrossMsg: &crossMsg,
+			Signature:     msgSig,
+			ClientUrl:     clientNodeUrl,
+		}
 	}
 
-	msgSig, err := node.signMessage(trainMsg)
-	if err != nil {
-		fmt.Printf("%v\n", err)
-		return
-	}
-
-	data := &NetMsg{
-		Header:        hTrain,
-		TrainMsg: &trainMsg,
-		Signature:     msgSig,
-		ClientUrl:     clientNodeUrl,
-	}
 	marshalMsg, _ := json.Marshal(data)
 	node.broadcast(marshalMsg)
 }
@@ -312,7 +370,7 @@ func (node *Node) handleTrain(trainMsg *TrainMsg, sig []byte, clientNodeUrl stri
   @param sig
   @param clientNodeUrl
 **/
-func (node *Node) handleAgg(aggMsg *AggMsg, sig []byte, clientNodeUrl string) {
+func (node *Node) handleAgg(aggMsg *AggMsg, sig []byte, clientNodeUrl string, id string) {
 
 	global_epoch := aggMsg.Global_Epoch
 	current_epoch := aggMsg.Current_Epoch
@@ -342,14 +400,13 @@ func (node *Node) handleAgg(aggMsg *AggMsg, sig []byte, clientNodeUrl string) {
 	msgs := make([]string, N, N)
 	sigs := make([]*bn256.G1, N, N)
 
-	for i := 0; i < N; i++ {
-		pks[i] = node.blslog[current_epoch].pks[i].Marshal()
-		msgs[i] = node.blslog[current_epoch].msgs[i]
-		sigs[i] = node.blslog[current_epoch].sigs[i]
-	}
-	asig := Aggregate(sigs)
-
-	if sum == NodeCount -1 {
+	if sum == node.countNeedReceiveMsgAmount() {
+		for i := 0; i < N; i++ {
+			pks[i] = node.blslog[current_epoch].pks[i].Marshal()
+			msgs[i] = node.blslog[current_epoch].msgs[i]
+			sigs[i] = node.blslog[current_epoch].sigs[i]
+		}
+		asig := Aggregate(sigs)
 		//进行一轮参数聚合过程
 		//Done:（在python文件中修改聚合的过程，即聚合的时候需要先拿出1/3的数据对节点提供的参数有效性进行判断）: 选择2/3的参数聚合，并下放。在这个过程中，可能存在leader节点故意不聚合参数，可采用bls签名，让leader不得不验证签名并提供参数。
 		//Done: 假设leader节点都是彻底的恶意节点，即恶意节点并不会真正聚合签名，进而其他节点无法相信该节点得出的聚合结果。
@@ -378,6 +435,11 @@ func (node *Node) handleAgg(aggMsg *AggMsg, sig []byte, clientNodeUrl string) {
 			var replyMsg ReplyMsg
 			replyMsg = ReplyMsg{
 				Digest: out.String(),
+				ASig: asig.Marshal(),
+				PKs: pks,
+				Msgs: msgs,
+				Type: "compute",
+				ID: id,
 			}
 
 			Send(ComposeMsg(hReply, replyMsg, []byte{}), clientNodeUrl)
@@ -425,16 +487,66 @@ func (node *Node) handleAgg(aggMsg *AggMsg, sig []byte, clientNodeUrl string) {
 
 /**
   handleData
-  @Description: 执行数据请求
+  @Description: 执行数据请求（从coinmarketcap获取比特币的资料）
   @receiver node
   @param dataMsg
   @param sig
   @param clientNodeUrl
 **/
 func (node *Node) handleData(dataMsg *DataMsg, sig []byte, clientNodeUrl string) {
-	//TODO
+	primaryID := node.findPrimaryNode()
+	_, primary_url := node.findNodePubkey(primaryID)
+	client := &http.Client{}
+	//"https://pro-api.coinmarketcap.com/v1/cryptocurrency/listings/latest"
+	req, err := http.NewRequest("GET",dataMsg.Ip, nil)
+	if err != nil {
+		log.Print(err)
+		os.Exit(1)
+	}
+
+	q := url.Values{}
+	q.Add("start", "1")
+	q.Add("limit", "1")
+	q.Add("convert", "USD")
+
+	req.Header.Set("Accepts", "application/json")
+	// API Key需要去官网获取
+	req.Header.Add("X-CMC_PRO_API_KEY", "35545489-9617-49fa-8200-1bd00e4d481b")
+	req.URL.RawQuery = q.Encode()
 
 
+	resp, err := client.Do(req)
+	if err != nil {
+		fmt.Println("Error sending request to server: ", err)
+		os.Exit(1)
+	}
+	//fmt.Println(resp.Status)
+	respBody, _ := ioutil.ReadAll(resp.Body)
+	// 从API获取的数据
+	result := string(respBody)
+
+	blssig := Sign(node.blsSK, result)
+	aggDataMsg := AggDataMsg{
+		NodeID: node.NodeID,
+		BlsSig:  blssig.Marshal(),
+		BlsPK:   node.blsPK.Marshal(),
+		Message: result,
+	}
+
+	msgSig, err := node.signMessage(aggDataMsg)
+	if err != nil {
+		fmt.Printf("%v\n", err)
+		return
+	}
+
+	data := &NetMsg{
+		Header:        hAggData,
+		AggDataMsg: &aggDataMsg,
+		Signature:     msgSig,
+		ClientUrl:     clientNodeUrl,
+	}
+	marshalMsg, _ := json.Marshal(data)
+	Send(marshalMsg, primary_url)
 }
 
 /**
@@ -445,8 +557,51 @@ func (node *Node) handleData(dataMsg *DataMsg, sig []byte, clientNodeUrl string)
   @param sig
   @param clientNodeUrl
 **/
-func (node *Node) handleAggData(aggDataMsg *AggDataMsg, sig []byte, clientNodeUrl string) {
-	//TODO
+func (node *Node) handleAggData(aggDataMsg *AggDataMsg, sig []byte, clientNodeUrl string, id string) {
+	sequence := node.sequenceID
+	node.mutex.Lock()
+	if node.msgLog.aggDataLog[sequence] == nil {
+		node.msgLog.aggDataLog[sequence] = make(map[int]bool)
+	}
+	node.msgLog.aggDataLog[sequence][aggDataMsg.NodeID] = true
+	blssig, _ := new(bn256.G1).Unmarshal(aggDataMsg.BlsSig)
+	blspk, _ := new(bn256.G2).Unmarshal(aggDataMsg.BlsPK)
+	if node.blslog[sequence] == nil {
+		node.blslog[sequence] = &BlsLog{
+			sigs: nil,
+			pks:  nil,
+			msgs: nil,
+		}
+	}
+	node.blslog[sequence].msgs = append(node.blslog[sequence].msgs, string(aggDataMsg.Message))
+	node.blslog[sequence].sigs = append(node.blslog[sequence].sigs, blssig)
+	node.blslog[sequence].pks = append(node.blslog[sequence].pks, blspk)
+	node.mutex.Unlock()
+
+	sum := node.findAggDataMsgCount(sequence)
+	N := sum
+	pks := make([][]byte, N, N)
+	msgs := make([]string, N, N)
+	sigs := make([]*bn256.G1, N, N)
+
+	if sum == node.countNeedReceiveMsgAmount() {
+		for i := 0; i < N; i++ {
+			pks[i] = node.blslog[sequence].pks[i].Marshal()
+			msgs[i] = node.blslog[sequence].msgs[i]
+			sigs[i] = node.blslog[sequence].sigs[i]
+		}
+		asig := Aggregate(sigs)
+
+		var replyMsg ReplyMsg
+		replyMsg = ReplyMsg{
+			ASig: asig.Marshal(),
+			PKs: pks,
+			Msgs: msgs,
+			Type: "data",
+			ID: id,
+		}
+		Send(ComposeMsg(hReply, replyMsg, []byte{}), clientNodeUrl)
+	}
 }
 
 /**
@@ -459,6 +614,7 @@ func (node *Node) handleAggData(aggDataMsg *AggDataMsg, sig []byte, clientNodeUr
 **/
 func (node *Node) handleCross(crossMsg *CrossMsg, sig []byte, clientNodeUrl string) {
 	//TODO
+	fmt.Println("handleCross")
 }
 
 /**
@@ -469,7 +625,7 @@ func (node *Node) handleCross(crossMsg *CrossMsg, sig []byte, clientNodeUrl stri
   @param sig
   @param clientNodeUrl
 **/
-func (node *Node) handleAggCross(aggCrossMsg *AggCrossMsg, sig []byte, clientNodeUrl string) {
+func (node *Node) handleAggCross(aggCrossMsg *AggCrossMsg, sig []byte, clientNodeUrl string, id string) {
 	//TODO
 }
 
@@ -484,6 +640,44 @@ func (node *Node) findAggMsgCount(current_epoch int) (int) {
 	sum := 0
 	node.mutex.Lock()
 	for _, exist := range node.msgLog.aggLog[current_epoch] {
+		if exist == true {
+			sum ++
+		}
+	}
+	node.mutex.Unlock()
+	return sum
+}
+
+/**
+  findAggDataMsgCount
+  @Description: 统计发送的data结果
+  @receiver node
+  @param sequence
+  @return int
+**/
+func (node *Node) findAggDataMsgCount(sequence int) (int) {
+	sum := 0
+	node.mutex.Lock()
+	for _, exist := range node.msgLog.aggDataLog[sequence] {
+		if exist == true {
+			sum ++
+		}
+	}
+	node.mutex.Unlock()
+	return sum
+}
+
+/**
+  findAggCrossMsgCount
+  @Description: 统计发送的Cross结果
+  @receiver node
+  @param sequence
+  @return int
+**/
+func (node *Node) findAggCrossMsgCount(sequence int) (int) {
+	sum := 0
+	node.mutex.Lock()
+	for _, exist := range node.msgLog.aggCrossLog[sequence] {
 		if exist == true {
 			sum ++
 		}

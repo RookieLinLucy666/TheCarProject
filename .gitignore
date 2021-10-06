@@ -1,3 +1,5 @@
 .DS_Store
 oracle/vendor
 oracle/fisco/go-sdk
+oracle/output/
+oracle/train/

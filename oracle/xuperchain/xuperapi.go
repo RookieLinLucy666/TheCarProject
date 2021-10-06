@@ -22,11 +22,18 @@ const (
 
 
 //var Mnemonic string
+var metadata Metadata
+var learning FederatedAIDemand
 
-type OnChainEvent struct {
+type LearningEvent struct {
 	Id string	`json:"id"`
 	Metadata string `json:"meta_data_byte"`
 	FaderatedAIDemandByte string `json:"faderated_ai_demand_byte"`
+}
+
+type DataEvent struct {
+	Id string	`json:"id"`
+	Metadata string `json:"meta_data"`
 }
 
 
@@ -164,9 +171,16 @@ func DeployContract() {
 
 /**
   InvokeCreateCfa
-  @Description: 链下调用CreateCfa(创建任务id)
+  @Description:  链下调用CreateCfa(创建任务id)
+  @param uploader "xuperchain"
+  @param name "counter"
+  @param argtype "data"
+  @param ip "127.0.0.1"
+  @param route "xuperchain"
+  @param abstract "162accb12e079d4b805f65f7a773c5e10cf537fef5ff99fde901ef0b1c963af8"
+  @return string
 **/
-func InvokeCreateCfa() string{
+func InvokeCreateCfa(uploader string, name string, argtype string, ip string, route string, abstract string) string{
 	account := getAccount()
 
 	contractName := Contract_Name
@@ -175,12 +189,12 @@ func InvokeCreateCfa() string{
 		panic(err)
 	}
 	args := map[string]string{
-		"uploader": "xuperchain",
-		"name":     "counter",
-		"type": "data", //data, cross, compute
-		"ip": "127.0.0.1",
-		"route": "xuperchain",
-		"abstract": "162accb12e079d4b805f65f7a773c5e10cf537fef5ff99fde901ef0b1c963af8",
+		"uploader": uploader,
+		"name":     name,
+		"type": argtype, //data, cross, compute
+		"ip": ip,
+		"route": route,
+		"abstract": abstract,
 	}
 
 	var tx *xuper.Transaction
@@ -188,7 +202,7 @@ func InvokeCreateCfa() string{
 	if err != nil {
 		panic(err)
 	}
-	fmt.Printf(string(tx.ContractResponse.Body))
+	//fmt.Printf(string(tx.ContractResponse.Body))
 	return string(tx.ContractResponse.Body)
 }
 
@@ -217,7 +231,7 @@ func InvokeQuery(id string) {
 		panic(err)
 	}
 	if tx != nil {
-		fmt.Printf("查询结果：%s\n", tx.ContractResponse.Body)
+		fmt.Printf("InvokeQuery：%s\n", tx.ContractResponse.Body)
 	}
 }
 
@@ -265,7 +279,7 @@ func ListenQueryEvent() error{
 	return nil
 }
 
-func InvokeQueryCallback(id string) {
+func InvokeQueryCallback(id string, data string, asig string, pks string) {
 	account := getAccount()
 
 	contractName := Contract_Name
@@ -275,9 +289,9 @@ func InvokeQueryCallback(id string) {
 	}
 	args := map[string]string{
 		"id": id,
-		"data": "965",
-		"asig": "1000",
-		"pks": "bc",
+		"data": data,
+		"asig": asig,
+		"pks": pks,
 	}
 
 	var tx *xuper.Transaction
@@ -287,15 +301,20 @@ func InvokeQueryCallback(id string) {
 		panic(err)
 	}
 	if tx != nil {
-		fmt.Printf("查询结果：%s\n", tx.ContractResponse.Body)
+		fmt.Printf("InvokeQueryCallback：%s\n", tx.ContractResponse.Body)
 	}
 }
 
 /**
   InvokeComputingShare
   @Description: 调用ComputingShare合约
+  @param id
+  @param model "cnn"
+  @param dataset "mnist"
+  @param round "2"
+  @param epoch "2"
 **/
-func InvokeComputingShare(id string) {
+func InvokeComputingShare(id string, model string, dataset string, round string, epoch string) {
 	account := getAccount()
 
 	contractName := Contract_Name
@@ -318,7 +337,7 @@ func InvokeComputingShare(id string) {
 		panic(err)
 	}
 	if tx != nil {
-		fmt.Printf("查询结果：%s\n", tx.ContractResponse.Body)
+		fmt.Printf("InvokeComputingShare：%s\n", tx.ContractResponse.Body)
 	}
 }
 
@@ -405,15 +424,15 @@ func QueryTxByID(eventType string, txID string) {
 	outputExt := output.GetTxOutputsExt()
 
 	event := strings.Split(string(outputExt[0].Value),"\n")
-
 	if eventType == "queryEvent" {
 		queryEvent := event[2][13:]
-		abstractQueryEvent(queryEvent)
+		metadata = abstractQueryEvent(queryEvent)
+		//fmt.Println(metadata)
 	}
 
 	if eventType == "computingShareEvent" {
 		computingShareEvent := event[1][41:]
-		abstractComputingEvent(computingShareEvent)
+		metadata, learning = abstractComputingEvent(computingShareEvent)
 	}
 
 
@@ -424,9 +443,8 @@ func QueryTxByID(eventType string, txID string) {
   @Description: 从http response中抽取数据协同事件内容
   @param event
 **/
-func abstractQueryEvent(event string) {
-
-	var e OnChainEvent
+func abstractQueryEvent(event string) Metadata{
+	var e DataEvent
 	dec := json.NewDecoder(strings.NewReader(event))
 	for {
 		if err := dec.Decode(&e); err == io.EOF {
@@ -440,7 +458,7 @@ func abstractQueryEvent(event string) {
 	sDec, err := base64.StdEncoding.DecodeString(e.Metadata)
 	if err != nil {
 		fmt.Printf("Error decoding string: %s ", err.Error())
-		return
+		return Metadata{}
 	}
 
 	//fmt.Println(string(sDec))
@@ -453,8 +471,9 @@ func abstractQueryEvent(event string) {
 		} else if err != nil {
 			log.Fatal(err)
 		}
-		fmt.Println(meta)
+		//fmt.Println(meta)
 	}
+	return meta
 }
 
 /**
@@ -465,7 +484,7 @@ func abstractQueryEvent(event string) {
   @return FederatedAIDemand
 **/
 func abstractComputingEvent(event string) (Metadata, FederatedAIDemand){
-	var e OnChainEvent
+	var e LearningEvent
 	dec := json.NewDecoder(strings.NewReader(event))
 	for {
 		if err := dec.Decode(&e); err == io.EOF {
@@ -498,7 +517,7 @@ func abstractComputingEvent(event string) (Metadata, FederatedAIDemand){
 		} else if err != nil {
 			log.Fatal(err)
 		}
-		fmt.Println(meta)
+		//fmt.Println(meta)
 	}
 
 	var demand FederatedAIDemand
@@ -509,12 +528,39 @@ func abstractComputingEvent(event string) (Metadata, FederatedAIDemand){
 		} else if err != nil {
 			log.Fatal(err)
 		}
-		fmt.Println(demand)
+		//fmt.Println(demand)
 	}
 
 	return meta, demand
 }
 
+/**
+  GetVariable
+  @Description: 获取全局变量
+  @return Metadata
+  @return FederatedAIDemand
+**/
+func GetVariable() (Metadata, FederatedAIDemand) {
+	return metadata, learning
+}
+
+/**
+  run
+  @Description: 合约运行函数
+**/
+func run() {
+	//xuperchain.CreateAccount()
+	//xuperchain.CreateContractAccount()
+	//xuperchain.DeployContract()
+	//id := xuperchain.InvokeCreateCfa()
+	//xuperchain.InvokeQuery(id)
+	//xuperchain.ListenQueryEvent()
+	//xuperchain.InvokeQueryCallback(id)
+	//time.Sleep(time.Second * 3)
+	//xuperchain.InvokeComputingShare(id)
+	//xuperchain.ListenComputingShareEvent()
+	//xuperchain.InvokeComputingCallBack(id)
+}
 
 
 

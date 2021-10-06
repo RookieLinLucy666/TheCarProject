@@ -127,3 +127,17 @@ func ReadFile(filepath string) []byte {
 	}
 	return f
 }
+
+/**
+  byte2string
+  @Description: 将[][]byte转为string
+  @param pks
+  @return string
+**/
+func byte2string(pks [][]byte) string{
+	result := ""
+	for _, v1 := range pks {
+		result += string(v1)
+	}
+	return result
+}
