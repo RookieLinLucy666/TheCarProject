@@ -618,8 +618,44 @@ func (node *Node) handleAggData(aggDataMsg *AggDataMsg, sig []byte, clientNodeUr
   @param clientNodeUrl
 **/
 func (node *Node) handleCross(crossMsg *CrossMsg, sig []byte, clientNodeUrl string, id string) {
-	//TODO
-	fmt.Println("handleCross")
+	primaryID := node.findPrimaryNode()
+	_, primary_url := node.findNodePubkey(primaryID)
+
+	// 调用一下目的区块链的方法
+	//cfa := CarFileAsset{
+	//	Uploader: "xuperchain",
+	//	Name:     "counter",
+	//	Type:     "cross", // data, cross, compute
+	//	Ip:       "xuperchain", // 目的区块链位置
+	//	Route:    "xuperchain",
+	//	Abstract: "162accb12e079d4b805f65f7a773c5e10cf537fef5ff99fde901ef0b1c963af8",
+	//}
+	//result := xuperchain.InvokeCreateCfa(cfa.Uploader, cfa.Name, cfa.Type, cfa.Ip, cfa.Route, cfa.Abstract)
+	result := "sucess"
+
+	blssig := Sign(node.blsSK, result)
+	aggCrossMsg := AggCrossMsg{
+		NodeID: node.NodeID,
+		BlsSig:  blssig.Marshal(),
+		BlsPK:   node.blsPK.Marshal(),
+		Message: result,
+	}
+
+	msgSig, err := node.signMessage(aggCrossMsg)
+	if err != nil {
+		fmt.Printf("%v\n", err)
+		return
+	}
+
+	data := &NetMsg{
+		Header:        hAggCross,
+		AggCrossMsg: &aggCrossMsg,
+		Signature:     msgSig,
+		ClientUrl:     clientNodeUrl,
+		ID: id,
+	}
+	marshalMsg, _ := json.Marshal(data)
+	Send(marshalMsg, primary_url)
 }
 
 /**
@@ -631,7 +667,49 @@ func (node *Node) handleCross(crossMsg *CrossMsg, sig []byte, clientNodeUrl stri
   @param clientNodeUrl
 **/
 func (node *Node) handleAggCross(aggCrossMsg *AggCrossMsg, sig []byte, clientNodeUrl string, id string) {
-	//TODO
+	sequence := node.sequenceID
+	node.mutex.Lock()
+	if node.msgLog.aggCrossLog[sequence] == nil {
+		node.msgLog.aggCrossLog[sequence] = make(map[int]bool)
+	}
+	node.msgLog.aggCrossLog[sequence][aggCrossMsg.NodeID] = true
+	blssig, _ := new(bn256.G1).Unmarshal(aggCrossMsg.BlsSig)
+	blspk, _ := new(bn256.G2).Unmarshal(aggCrossMsg.BlsPK)
+	if node.blslog[sequence] == nil {
+		node.blslog[sequence] = &BlsLog{
+			sigs: nil,
+			pks:  nil,
+			msgs: nil,
+		}
+	}
+	node.blslog[sequence].msgs = append(node.blslog[sequence].msgs, string(aggCrossMsg.Message))
+	node.blslog[sequence].sigs = append(node.blslog[sequence].sigs, blssig)
+	node.blslog[sequence].pks = append(node.blslog[sequence].pks, blspk)
+	node.mutex.Unlock()
+
+	sum := node.findAggCrossMsgCount(sequence)
+	N := sum
+	pks := make([][]byte, N, N)
+	msgs := make([]string, N, N)
+	sigs := make([]*bn256.G1, N, N)
+	if sum == node.countNeedReceiveMsgAmount() {
+		for i := 0; i < N; i++ {
+			pks[i] = node.blslog[sequence].pks[i].Marshal()
+			msgs[i] = node.blslog[sequence].msgs[i]
+			sigs[i] = node.blslog[sequence].sigs[i]
+		}
+		asig := Aggregate(sigs)
+
+		var replyMsg ReplyMsg
+		replyMsg = ReplyMsg{
+			ASig: asig.Marshal(),
+			PKs: pks,
+			Msgs: msgs,
+			Type: "cross",
+			ID: id,
+		}
+		Send(ComposeMsg(hReply, replyMsg, []byte{}), clientNodeUrl)
+	}
 }
 
 /**

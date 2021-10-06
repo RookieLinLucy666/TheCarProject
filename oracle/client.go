@@ -111,23 +111,23 @@ func (c *Client) sendRequest() {
 	//	Abstract: "162accb12e079d4b805f65f7a773c5e10cf537fef5ff99fde901ef0b1c963af8",
 	//}
 
-	cfa := CarFileAsset{
-		Uploader: "xuperchain",
-		Name:     "counter",
-		Type:     "compute", // data, cross, compute
-		Ip:       "https://pro-api.coinmarketcap.com/v1/cryptocurrency/listings/latest",
-		Route:    "xuperchain",
-		Abstract: "162accb12e079d4b805f65f7a773c5e10cf537fef5ff99fde901ef0b1c963af8",
-	}
-
 	//cfa := CarFileAsset{
 	//	Uploader: "xuperchain",
 	//	Name:     "counter",
-	//	Type:     "cross", // data, cross, compute
-	//	Ip:       "xuperchain", // 目的区块链位置
+	//	Type:     "compute", // data, cross, compute
+	//	Ip:       "https://pro-api.coinmarketcap.com/v1/cryptocurrency/listings/latest",
 	//	Route:    "xuperchain",
 	//	Abstract: "162accb12e079d4b805f65f7a773c5e10cf537fef5ff99fde901ef0b1c963af8",
 	//}
+
+	cfa := CarFileAsset{
+		Uploader: "xuperchain",
+		Name:     "counter",
+		Type:     "cross", // data, cross, compute
+		Ip:       "xuperchain", // 目的区块链位置
+		Route:    "xuperchain",
+		Abstract: "162accb12e079d4b805f65f7a773c5e10cf537fef5ff99fde901ef0b1c963af8",
+	}
 	id := xuperchain.InvokeCreateCfa(cfa.Uploader, cfa.Name, cfa.Type, cfa.Ip, cfa.Route, cfa.Abstract)
 
 	switch cfa.Type {
@@ -163,7 +163,7 @@ func ListenData(id string) *RequestMsg {
 	xuperchain.InvokeQuery(id)
 	xuperchain.ListenQueryEvent()
 	metadata, _ := xuperchain.GetVariable()
-	fmt.Println(metadata)
+	//fmt.Println(metadata)
 
 	return &RequestMsg{
 		NodeCount: NodeCount,
@@ -171,11 +171,20 @@ func ListenData(id string) *RequestMsg {
 		Metadata: metadata,
 		Type: "data",
 	}
-
 }
 
 func ListenCross(id string) *RequestMsg{
-	return &RequestMsg{}
+	xuperchain.InvokeQuery(id)
+	xuperchain.ListenQueryEvent()
+	metadata, _ := xuperchain.GetVariable()
+	//fmt.Println(metadata)
+
+	return &RequestMsg{
+		NodeCount: NodeCount,
+		NIID: NIID,
+		Metadata: metadata,
+		Type: "cross",
+	}
 }
 
 func ListenCompute(id string) *RequestMsg{
@@ -227,6 +236,7 @@ func (c *Client) handleReply(payload []byte) bool {
 			xuperchain.InvokeQueryCallback(replyMsg.ID, replyMsg.Msgs[0], string(replyMsg.ASig), byte2string(replyMsg.PKs))
 			fmt.Println("Finish Data")
 		} else if replyMsg.Type == "cross" {
+			xuperchain.InvokeComputingCallBack(replyMsg.ID, replyMsg.Msgs[0], string(replyMsg.ASig), byte2string(replyMsg.PKs))
 			fmt.Println("Finish Cross")
 		}
 		c.EndTime = time.Now()
