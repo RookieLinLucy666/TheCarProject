@@ -324,10 +324,10 @@ func InvokeComputingShare(id string, model string, dataset string, round string,
 	}
 	args := map[string]string{
 		"id": id,
-		"model": "cnn",
-		"dataset": "mnist",
-		"round": "2",
-		"epoch": "2",
+		"model": model,
+		"dataset": dataset,
+		"round": round,
+		"epoch": epoch,
 	}
 
 	var tx *xuper.Transaction
@@ -385,7 +385,7 @@ func ListenComputingShareEvent() error{
 	return nil
 }
 
-func InvokeComputingCallBack(id string) {
+func InvokeComputingCallBack(id string, result string, asig string, pks string) {
 	account := getAccount()
 
 	contractName := Contract_Name
@@ -395,9 +395,9 @@ func InvokeComputingCallBack(id string) {
 	}
 	args := map[string]string{
 		"id": id,
-		"faderated_ai_result":     "96.5",
-		"asig": "1000",
-		"pks": "xxxx",
+		"faderated_ai_result": result,
+		"asig": asig,
+		"pks": pks,
 	}
 
 	var tx *xuper.Transaction
@@ -407,7 +407,7 @@ func InvokeComputingCallBack(id string) {
 		panic(err)
 	}
 	if tx != nil {
-		fmt.Printf("Invoke Native Go Contract Success! %x\n", tx.Tx.GetTxOutputsExt()[0].GetValue())
+		fmt.Printf("InvokeComputingCallBack：%s\n", tx.ContractResponse.Body)
 	}
 }
 
@@ -552,10 +552,10 @@ func run() {
 	//xuperchain.CreateAccount()
 	//xuperchain.CreateContractAccount()
 	//xuperchain.DeployContract()
-	//id := xuperchain.InvokeCreateCfa()
+	//id := xuperchain.InvokeCreateCfa("xuperchain", "counter", "data", "127.0.0.1", "xuperchain","162accb12e079d4b805f65f7a773c5e10cf537fef5ff99fde901ef0b1c963af8")
 	//xuperchain.InvokeQuery(id)
 	//xuperchain.ListenQueryEvent()
-	//xuperchain.InvokeQueryCallback(id)
+	//xuperchain.InvokeQueryCallback(id, "91.2", "aaa", "bbb")
 	//time.Sleep(time.Second * 3)
 	//xuperchain.InvokeComputingShare(id)
 	//xuperchain.ListenComputingShareEvent()

@@ -68,5 +68,4 @@ func main() {
 		fmt.Println("time consume : ", float64(time)/1000000000)
 		debugLog.Printf("time consume : %v", float64(time)/1000000000)
 	}
-
 }

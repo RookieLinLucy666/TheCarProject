@@ -102,23 +102,23 @@ func (c *Client) handleConnection(conn net.Conn) (reply bool) {
 func (c *Client) sendRequest() {
 	//groups := c.generateMali()
 	var reqmsg *RequestMsg
-	cfa := CarFileAsset{
-		Uploader: "xuperchain",
-		Name:     "counter",
-		Type:     "data", // data, cross, compute
-		Ip:       "https://pro-api.coinmarketcap.com/v1/cryptocurrency/listings/latest",
-		Route:    "xuperchain",
-		Abstract: "162accb12e079d4b805f65f7a773c5e10cf537fef5ff99fde901ef0b1c963af8",
-	}
-
 	//cfa := CarFileAsset{
 	//	Uploader: "xuperchain",
 	//	Name:     "counter",
-	//	Type:     "compute", // data, cross, compute
+	//	Type:     "data", // data, cross, compute
 	//	Ip:       "https://pro-api.coinmarketcap.com/v1/cryptocurrency/listings/latest",
 	//	Route:    "xuperchain",
 	//	Abstract: "162accb12e079d4b805f65f7a773c5e10cf537fef5ff99fde901ef0b1c963af8",
 	//}
+
+	cfa := CarFileAsset{
+		Uploader: "xuperchain",
+		Name:     "counter",
+		Type:     "compute", // data, cross, compute
+		Ip:       "https://pro-api.coinmarketcap.com/v1/cryptocurrency/listings/latest",
+		Route:    "xuperchain",
+		Abstract: "162accb12e079d4b805f65f7a773c5e10cf537fef5ff99fde901ef0b1c963af8",
+	}
 
 	//cfa := CarFileAsset{
 	//	Uploader: "xuperchain",
@@ -179,7 +179,7 @@ func ListenCross(id string) *RequestMsg{
 }
 
 func ListenCompute(id string) *RequestMsg{
-	xuperchain.InvokeComputingShare(id, "cnn", "mnist", "2", "2")
+	xuperchain.InvokeComputingShare(id, "cnn", "mnist", "1", "1")
 	xuperchain.ListenComputingShareEvent()
 	metadata, learning := xuperchain.GetVariable()
 
@@ -221,12 +221,13 @@ func (c *Client) handleReply(payload []byte) bool {
 	ok := AVerify(asig,replyMsg.Msgs,pks)
 	if ok {
 		if replyMsg.Type == "compute" {
-
+			xuperchain.InvokeComputingCallBack(replyMsg.ID, replyMsg.Msgs[0], string(replyMsg.ASig), byte2string(replyMsg.PKs))
+			fmt.Println("Finish Compute")
 		} else if replyMsg.Type == "data" {
 			xuperchain.InvokeQueryCallback(replyMsg.ID, replyMsg.Msgs[0], string(replyMsg.ASig), byte2string(replyMsg.PKs))
-			fmt.Println("Finish Query")
+			fmt.Println("Finish Data")
 		} else if replyMsg.Type == "cross" {
-
+			fmt.Println("Finish Cross")
 		}
 		c.EndTime = time.Now()
 		fmt.Println("Finish calculation.")

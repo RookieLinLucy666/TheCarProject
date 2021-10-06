@@ -107,17 +107,17 @@ func (node *Node) handleMsg() {
 		//header, payload, sign := SplitMsg(msg)
 		switch netMsg.Header {
 		case hRequest:
-			node.handleRequest(netMsg.RequestMsg, netMsg.Signature, netMsg.ClientNodePubkey, netMsg.ClientUrl)
+			node.handleRequest(netMsg.RequestMsg, netMsg.Signature, netMsg.ClientNodePubkey, netMsg.ClientUrl, netMsg.ID)
 		case hTrain:
-			node.handleTrain(netMsg.TrainMsg, netMsg.Signature, netMsg.ClientUrl)
+			node.handleTrain(netMsg.TrainMsg, netMsg.Signature, netMsg.ClientUrl, netMsg.ID)
 		case hAgg:
 			node.handleAgg(netMsg.AggMsg, netMsg.Signature, netMsg.ClientUrl, netMsg.ID)
 		case hData:
-			node.handleData(netMsg.DataMsg, netMsg.Signature, netMsg.ClientUrl)
+			node.handleData(netMsg.DataMsg, netMsg.Signature, netMsg.ClientUrl, netMsg.ID)
 		case hAggData:
 			node.handleAggData(netMsg.AggDataMsg, netMsg.Signature, netMsg.ClientUrl, netMsg.ID)
 		case hCross:
-			node.handleCross(netMsg.CrossMsg, netMsg.Signature, netMsg.ClientUrl)
+			node.handleCross(netMsg.CrossMsg, netMsg.Signature, netMsg.ClientUrl, netMsg.ID)
 		case hAggCross:
 			node.handleAggCross(netMsg.AggCrossMsg, netMsg.Signature, netMsg.ClientUrl, netMsg.ID)
 		}
@@ -133,7 +133,7 @@ func (node *Node) handleMsg() {
   @param clientNodePubkey
   @param clientNodeUrl
 **/
-func (node *Node) handleRequest(request *RequestMsg, sig []byte, clientNodePubkey *rsa.PublicKey, clientNodeUrl string) {
+func (node *Node) handleRequest(request *RequestMsg, sig []byte, clientNodePubkey *rsa.PublicKey, clientNodeUrl string, id string) {
 	var data *NetMsg
 	taskType := request.Type
 
@@ -159,6 +159,7 @@ func (node *Node) handleRequest(request *RequestMsg, sig []byte, clientNodePubke
 			TrainMsg: &trainMsg,
 			Signature:     msgSig,
 			ClientUrl:     clientNodeUrl,
+			ID: id,
 		}
 	} else if taskType == "data"{
 		var dataMsg DataMsg
@@ -178,6 +179,7 @@ func (node *Node) handleRequest(request *RequestMsg, sig []byte, clientNodePubke
 			DataMsg: &dataMsg,
 			Signature:     msgSig,
 			ClientUrl:     clientNodeUrl,
+			ID: id,
 		}
 	} else {
 		var crossMsg CrossMsg
@@ -197,6 +199,7 @@ func (node *Node) handleRequest(request *RequestMsg, sig []byte, clientNodePubke
 			CrossMsg: &crossMsg,
 			Signature:     msgSig,
 			ClientUrl:     clientNodeUrl,
+			ID: id,
 		}
 	}
 
@@ -212,7 +215,7 @@ func (node *Node) handleRequest(request *RequestMsg, sig []byte, clientNodePubke
   @param sig
   @param clientNodeUrl
 **/
-func (node *Node) handleTrain(trainMsg *TrainMsg, sig []byte, clientNodeUrl string) {
+func (node *Node) handleTrain(trainMsg *TrainMsg, sig []byte, clientNodeUrl string, id string) {
 	var aggMsg AggMsg
 
 	if isContain(trainMsg.Groups, node.NodeID) {
@@ -356,6 +359,7 @@ func (node *Node) handleTrain(trainMsg *TrainMsg, sig []byte, clientNodeUrl stri
 			AggMsg: &aggMsg,
 			Signature:     msgSig,
 			ClientUrl:     clientNodeUrl,
+			ID: id,
 		}
 		marshalMsg, _ := json.Marshal(data)
 		Send(marshalMsg, primary_url)
@@ -475,6 +479,7 @@ func (node *Node) handleAgg(aggMsg *AggMsg, sig []byte, clientNodeUrl string, id
 				TrainMsg: &trainMsg,
 				Signature:     msgSig,
 				ClientUrl:     clientNodeUrl,
+				ID: id,
 			}
 			marshalMsg, _ := json.Marshal(data)
 			node.broadcast(marshalMsg)		}
@@ -493,7 +498,7 @@ func (node *Node) handleAgg(aggMsg *AggMsg, sig []byte, clientNodeUrl string, id
   @param sig
   @param clientNodeUrl
 **/
-func (node *Node) handleData(dataMsg *DataMsg, sig []byte, clientNodeUrl string) {
+func (node *Node) handleData(dataMsg *DataMsg, sig []byte, clientNodeUrl string, id string) {
 	primaryID := node.findPrimaryNode()
 	_, primary_url := node.findNodePubkey(primaryID)
 	client := &http.Client{}
@@ -544,6 +549,7 @@ func (node *Node) handleData(dataMsg *DataMsg, sig []byte, clientNodeUrl string)
 		AggDataMsg: &aggDataMsg,
 		Signature:     msgSig,
 		ClientUrl:     clientNodeUrl,
+		ID: id,
 	}
 	marshalMsg, _ := json.Marshal(data)
 	Send(marshalMsg, primary_url)
@@ -583,7 +589,6 @@ func (node *Node) handleAggData(aggDataMsg *AggDataMsg, sig []byte, clientNodeUr
 	pks := make([][]byte, N, N)
 	msgs := make([]string, N, N)
 	sigs := make([]*bn256.G1, N, N)
-
 	if sum == node.countNeedReceiveMsgAmount() {
 		for i := 0; i < N; i++ {
 			pks[i] = node.blslog[sequence].pks[i].Marshal()
@@ -612,7 +617,7 @@ func (node *Node) handleAggData(aggDataMsg *AggDataMsg, sig []byte, clientNodeUr
   @param sig
   @param clientNodeUrl
 **/
-func (node *Node) handleCross(crossMsg *CrossMsg, sig []byte, clientNodeUrl string) {
+func (node *Node) handleCross(crossMsg *CrossMsg, sig []byte, clientNodeUrl string, id string) {
 	//TODO
 	fmt.Println("handleCross")
 }
