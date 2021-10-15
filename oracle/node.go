@@ -631,7 +631,7 @@ func (node *Node) handleCross(crossMsg *CrossMsg, sig []byte, clientNodeUrl stri
 	//	Abstract: "162accb12e079d4b805f65f7a773c5e10cf537fef5ff99fde901ef0b1c963af8",
 	//}
 	//result := xuperchain.InvokeCreateCfa(cfa.Uploader, cfa.Name, cfa.Type, cfa.Ip, cfa.Route, cfa.Abstract)
-	result := "sucess"
+	result := "success"
 
 	blssig := Sign(node.blsSK, result)
 	aggCrossMsg := AggCrossMsg{

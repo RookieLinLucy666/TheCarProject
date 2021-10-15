@@ -310,10 +310,17 @@ go build ./cmd/abigen
 编译生成go文件，先利用solc将合约文件生成abi和bin文件，以前面所提供的Store.sol为例：
 ```
 ./solc-0.4.25 --bin --abi -o ./store ./store/Store.sol
+./solc-0.4.25 --bin --abi -o ./computing ./computing/ComputingShare.sol
+
+./solc-0.4.25 --bin --abi -o ./store ./store/Store.sol
+./solc-0.4.25 --bin --abi -o ./computing ./computing/ComputingShare.sol
+
 ```
 Store.sol目录下会生成Store.bin和Store.abi。此时利用abigen工具将Store.bin和Store.abi转换成Store.go：
 ``` 
 ./abigen --bin ./store/Store.bin --abi ./store/Store.abi --pkg store --type Store --out ./store/Store.go
+./abigen --bin ./computing/ComputingShare.bin --abi ./computing/ComputingShare.abi --pkg store --type computing --out ./computing/ComputingShare.go
+
 ```
 最后store目录下面存在以下文件：
 ``` 
@@ -344,3 +351,6 @@ bash get_account.sh -k accounts/0x22a163da252e56d8c1befc5efea123991f761c36.pem
 ```
 [INFO] Account Address   : 0x22a163da252e56d8c1befc5efea123991f761c36
 ```
+# 事件监听
+go-event
+https://pkg.go.dev/github.com/FISCO-BCOS/go-sdk/event

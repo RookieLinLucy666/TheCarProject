@@ -592,8 +592,6 @@ golang.org/x/net/http2/hpack
 golang.org/x/net/idna
 golang.org/x/net/internal/timeseries
 golang.org/x/net/trace
-# golang.org/x/sync v0.0.0-20200625203802-6e8e738ad208
-## explicit
 # golang.org/x/sys v0.0.0-20210124154548-22da62e12c0c
 ## explicit; go 1.12
 golang.org/x/sys/cpu
@@ -610,8 +608,6 @@ golang.org/x/text/secure/bidirule
 golang.org/x/text/transform
 golang.org/x/text/unicode/bidi
 golang.org/x/text/unicode/norm
-# golang.org/x/tools v0.0.0-20200221224223-e1da425f72fd
-## explicit; go 1.11
 # google.golang.org/genproto v0.0.0-20200526211855-cb27e3aa2013
 ## explicit; go 1.11
 google.golang.org/genproto/googleapis/api/annotations
