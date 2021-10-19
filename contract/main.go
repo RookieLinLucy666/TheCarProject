@@ -17,6 +17,7 @@ const (
 	TASK_QUEUE = "QueryQueue"
 	META = "Meta"
 	RESULT = "Result"
+	USER = "User"
 )
 
 //元数据结构体
@@ -92,6 +93,14 @@ func (cfa *carFileAsset) Initialize(ctx code.Context) code.Response{
 		resultMap := map[string][]byte{}
 		resultMapByte, _ := json.Marshal(resultMap)
 		if err := ctx.PutObject([]byte(RESULT), resultMapByte); err != nil {
+			return code.Error(err)
+		}
+	}
+	//初始化用户字典
+	if _, err := ctx.GetObject([]byte(USER)); err != nil {
+		userMap := map[byte][]byte{}
+		userMapByte, _ := json.Marshal(userMap)
+		if err := ctx.PutObject([]byte(USER), userMapByte); err != nil {
 			return code.Error(err)
 		}
 	}
@@ -446,6 +455,72 @@ func (cfa *carFileAsset) UpdateCfa(ctx code.Context) code.Response {
 		return code.Error(err)
 	}
 	return code.OK([]byte(args.Id))
+}
+
+
+//AddUser
+/**
+ * @Author Mengeshall
+ * @Date 2021/10/19
+ * @Description 添加认证用户
+ */
+func (cfa *carFileAsset) AddUser(ctx code.Context) code.Response {
+	//验证参数
+	args := struct {
+		Name		string `json:"name"`
+		Abstract	byte `json:"abstract"`
+	}{}
+	if err := code.Unmarshal(ctx.Args(), &args); err != nil {
+		return code.Error(err)
+	}
+	//上传用户摘要
+	userMapByte, err := ctx.GetObject([]byte(USER))
+	if err != nil {
+		return code.Error(err)
+	}
+	userMap := map[byte][]byte{}
+	if err := json.Unmarshal(userMapByte, &userMap); err != nil {
+		return code.Error(err)
+	}
+	userMap[args.Abstract] = []byte("add user successfully")
+	userMapByte, _ = json.Marshal(userMap)
+	if err := ctx.PutObject([]byte(USER), userMapByte); err != nil {
+		return code.Error(err)
+	}
+	return code.OK([]byte("add user successfully"))
+}
+
+
+//CheckUser
+/**
+ * @Author Mengeshall
+ * @Date 2021/10/19
+ * @Description 检测用户是否上链
+ */
+func (cfa *carFileAsset) CheckUser(ctx code.Context) code.Response {
+	//验证参数
+	args := struct {
+		Name		string `json:"name"`
+		Abstract	byte `json:"abstract"`
+	}{}
+	if err := code.Unmarshal(ctx.Args(), &args); err != nil {
+		return code.Error(err)
+	}
+	//检测用户是否上链
+	userMapByte, err := ctx.GetObject([]byte(USER))
+	if err != nil {
+		return code.Error(err)
+	}
+	userMap := map[byte][]byte{}
+	if err := json.Unmarshal(userMapByte, &userMap); err != nil {
+		return code.Error(err)
+	}
+	_, ok := userMap[args.Abstract]
+	if ok == false {
+		return code.OK([]byte(strconv.Itoa(0)))
+	} else {
+		return code.OK([]byte(strconv.Itoa(1)))
+	}
 }
 
 func main() {
