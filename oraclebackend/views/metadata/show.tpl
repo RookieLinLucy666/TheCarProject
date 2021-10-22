@@ -1,0 +1,1 @@
+/Users/wumx/go/src/TheCarProject/oraclebackend/views/metadata/show.tpl
