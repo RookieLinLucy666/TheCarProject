@@ -221,6 +221,7 @@ func (c *Client) handleReply(payload []byte) bool {
 			xuperchain.InvokeComputingCallBack(replyMsg.ID, replyMsg.Msgs[0], string(replyMsg.ASig), byte2string(replyMsg.PKs))
 			fmt.Println("Finish Cross")
 		}
+
 		c.EndTime = time.Now()
 		fmt.Println("Finish calculation.")
 		return true

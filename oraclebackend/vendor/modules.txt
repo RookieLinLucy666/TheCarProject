@@ -9,6 +9,7 @@ github.com/astaxie/beego/context/param
 github.com/astaxie/beego/grace
 github.com/astaxie/beego/logs
 github.com/astaxie/beego/orm
+github.com/astaxie/beego/plugins/cors
 github.com/astaxie/beego/session
 github.com/astaxie/beego/toolbox
 github.com/astaxie/beego/utils

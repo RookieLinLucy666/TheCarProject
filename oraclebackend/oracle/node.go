@@ -535,6 +535,7 @@ func (node *Node) handleData(dataMsg *DataMsg, sig []byte, clientNodeUrl string,
 	respBody, _ := ioutil.ReadAll(resp.Body)
 	// 从API获取的数据
 	result := string(respBody)
+	fmt.Println(result)
 
 	blssig := Sign(node.blsSK, result)
 	aggDataMsg := AggDataMsg{

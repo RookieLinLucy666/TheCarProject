@@ -117,7 +117,7 @@ model.to(device)  # convert parameters and buffers of all modules to cuda tensor
 criterion = torch.nn.CrossEntropyLoss()
 optimizer = optim.SGD(model.parameters(), lr=0.01, momentum=0.5)
 
-valid_dataset = datasets.MNIST(root='mnist/',
+valid_dataset = datasets.MNIST(root='../../mnist/',
                               train=False,
                               download=True,
                               transform=transform)
@@ -167,7 +167,7 @@ if not os.path.isdir("train/non-iid/checkpoint/agg/"):
     os.mkdir("train/non-iid/checkpoint/agg/")
 torch.save(checkpoint, 'train/non-iid/checkpoint/agg/mnist_ckpt_'+ str(current_rounds) + ".pth")
 
-test_dataset = datasets.MNIST(root='mnist/',
+test_dataset = datasets.MNIST(root='../../mnist/',
                               train=False,
                               download=True,
                               transform=transform)

@@ -19,7 +19,7 @@ type MetadataController struct {
 func (c *MetadataController) URLMapping() {
 	c.Mapping("Post", c.Post)
 	c.Mapping("GetOne", c.GetOne)
-	c.Mapping("GetAll", c.GetAll)
+	// c.Mapping("GetAll", c.GetAll)
 	c.Mapping("Put", c.Put)
 	c.Mapping("Delete", c.Delete)
 }

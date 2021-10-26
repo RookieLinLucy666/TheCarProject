@@ -1,12 +1,21 @@
+/*
+ * @Author: your name
+ * @Date: 2021-10-23 02:33:02
+ * @LastEditTime: 2021-10-23 04:37:57
+ * @LastEditors: Please set LastEditors
+ * @Description: In User Settings Edit
+ * @FilePath: /TheCarProject/oraclebackend/controllers/datashare.go
+ */
 package controllers
 
 import (
 	"github.com/astaxie/beego"
-	"net"
 	"oraclebackend/models"
 	"oraclebackend/oracle"
 	"oraclebackend/xuperchain"
+	"net"
 	"strconv"
+	"fmt"
 )
 
 type DataShareController struct {
@@ -43,7 +52,7 @@ func (c *DataShareController) CreateData()  {
 func (c *DataShareController) Query()  {
 	var v *models.Metadata
 	//idStr := c.Ctx.Input.Param(":id")
-	idStr := "5"
+	idStr := "7"
 	id, _ := strconv.ParseInt(idStr, 0, 64)
 	v, _ = models.GetMetadataById(id)
 	o := oracle.NewClient(0)
@@ -84,6 +93,7 @@ func (c *DataShareController) ComputingShare()  {
 		Epoch: args.Epoch,
 	}
 	o := oracle.NewClient(0)
+	fmt.Println(args)
 	o.SendRequest(args.Type, args.Bcid, demand, -1)
 	ln, err := net.Listen("tcp", o.Url)
 	if err != nil {

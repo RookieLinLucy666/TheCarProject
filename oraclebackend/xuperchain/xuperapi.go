@@ -14,10 +14,10 @@ import (
 )
 
 const (
-	Address = "ehxodjwhVtESXcqpdUZ2LExs53DS4aHkE"
+	Address = "ezDq8L2yHpqTSmKFs3HCiFmVELN67hFF3"
 	Contract_Addr = "XC1234567890111113@xuper"
-	Contract_Name = "SDKNativeCount"
-	Mnemonic = "取 兰 印 者 协 校 昌 何 钱 研 恨 治"
+	Contract_Name = "SDKNativeCount16"
+	Mnemonic = "抱 丙 德 斯 伐 珠 凸 踏 杆 寻 宣 取"
 )
 
 
