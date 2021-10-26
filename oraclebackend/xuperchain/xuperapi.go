@@ -169,6 +169,48 @@ func DeployContract() {
 	fmt.Printf("Deploy Native Go Contract Success! %x\n", tx.Tx.Txid)
 }
 
+func InvokeAddUser(name string, abstract string) string{
+	account := getAccount()
+
+	contractName := Contract_Name
+	xchainClient, err := xuper.New("127.0.0.1:37101")
+	if err != nil {
+		panic(err)
+	}
+	args := map[string]string{
+		"name": name,
+		"abstract": abstract,
+	}
+
+	var tx *xuper.Transaction
+	tx, err = xchainClient.InvokeNativeContract(account, contractName, "AddUser", args)
+	if err != nil {
+		panic(err)
+	}
+	return string(tx.ContractResponse.Body)
+}
+
+func InvokeCheckUser (name string, abstract string) string{
+	account := getAccount()
+
+	contractName := Contract_Name
+	xchainClient, err := xuper.New("127.0.0.1:37101")
+	if err != nil {
+		panic(err)
+	}
+	args := map[string]string{
+		"name": name,
+		"abstract": abstract,
+	}
+
+	var tx *xuper.Transaction
+	tx, err = xchainClient.InvokeNativeContract(account, contractName, "CheckUser", args)
+	if err != nil {
+		panic(err)
+	}
+	return string(tx.ContractResponse.Body)
+}
+
 /**
   InvokeCreateCfa
   @Description:  链下调用CreateCfa(创建任务id)
