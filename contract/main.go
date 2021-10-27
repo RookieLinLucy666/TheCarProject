@@ -468,7 +468,7 @@ func (cfa *carFileAsset) AddUser(ctx code.Context) code.Response {
 	//验证参数
 	args := struct {
 		Name		string `json:"name"`
-		Abstract	byte `json:"abstract"`
+		Abstract	string `json:"abstract"`
 	}{}
 	if err := code.Unmarshal(ctx.Args(), &args); err != nil {
 		return code.Error(err)
@@ -478,7 +478,7 @@ func (cfa *carFileAsset) AddUser(ctx code.Context) code.Response {
 	if err != nil {
 		return code.Error(err)
 	}
-	userMap := map[byte][]byte{}
+	userMap := map[string][]byte{}
 	if err := json.Unmarshal(userMapByte, &userMap); err != nil {
 		return code.Error(err)
 	}
@@ -501,7 +501,7 @@ func (cfa *carFileAsset) CheckUser(ctx code.Context) code.Response {
 	//验证参数
 	args := struct {
 		Name		string `json:"name"`
-		Abstract	byte `json:"abstract"`
+		Abstract	string `json:"abstract"`
 	}{}
 	if err := code.Unmarshal(ctx.Args(), &args); err != nil {
 		return code.Error(err)
@@ -511,7 +511,7 @@ func (cfa *carFileAsset) CheckUser(ctx code.Context) code.Response {
 	if err != nil {
 		return code.Error(err)
 	}
-	userMap := map[byte][]byte{}
+	userMap := map[string][]byte{}
 	if err := json.Unmarshal(userMapByte, &userMap); err != nil {
 		return code.Error(err)
 	}

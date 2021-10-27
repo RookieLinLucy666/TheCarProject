@@ -544,6 +544,48 @@ func GetVariable() (Metadata, FederatedAIDemand) {
 	return metadata, learning
 }
 
+func InvokeAddUser(name string, abstract string) string{
+	account := getAccount()
+
+	contractName := Contract_Name
+	xchainClient, err := xuper.New("127.0.0.1:37101")
+	if err != nil {
+		panic(err)
+	}
+	args := map[string]string{
+		"name": name,
+		"abstract": abstract,
+	}
+
+	var tx *xuper.Transaction
+	tx, err = xchainClient.InvokeNativeContract(account, contractName, "AddUser", args)
+	if err != nil {
+		panic(err)
+	}
+	return string(tx.ContractResponse.Body)
+}
+
+func InvokeCheckUser (name string, abstract string) string{
+	account := getAccount()
+
+	contractName := Contract_Name
+	xchainClient, err := xuper.New("127.0.0.1:37101")
+	if err != nil {
+		panic(err)
+	}
+	args := map[string]string{
+		"name": name,
+		"abstract": abstract,
+	}
+
+	var tx *xuper.Transaction
+	tx, err = xchainClient.InvokeNativeContract(account, contractName, "CheckUser", args)
+	if err != nil {
+		panic(err)
+	}
+	return string(tx.ContractResponse.Body)
+}
+
 /**
   run
   @Description: 合约运行函数

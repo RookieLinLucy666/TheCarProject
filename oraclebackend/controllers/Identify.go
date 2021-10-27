@@ -1,6 +1,8 @@
 package controllers
 
 import (
+	"encoding/json"
+	"fmt"
 	"github.com/astaxie/beego"
 	"oraclebackend/xuperchain"
 	"strconv"
@@ -17,11 +19,19 @@ type User struct {
 
 func (c *IdentifyController) AddUser()  {
 	var u User
-	if err := c.ParseForm(&u); err != nil {
-		c.Data["json"] = err.Error()
-	}
+	//if err := c.ParseForm(&u); err != nil {
+	//	c.Data["json"] = err.Error()
+	//}
+	json.Unmarshal(c.Ctx.Input.RequestBody, &u)
+	fmt.Println(c.Ctx.Input)
 	rst := xuperchain.InvokeAddUser(u.Name, u.Abstract)
-	c.Data["json"] = rst
+	fmt.Println(rst)
+	c.Data["json"] = struct {
+		Desc	string `json:"desc"`
+	}{
+		Desc: rst,
+	}
+	c.ServeJSON()
 }
 
 func (c *IdentifyController) CheckUser()  {
@@ -29,7 +39,9 @@ func (c *IdentifyController) CheckUser()  {
 	if err := c.ParseForm(&u); err != nil {
 		c.Data["json"] = err.Error()
 	}
+	fmt.Println(u)
 	rst, _ := strconv.Atoi(xuperchain.InvokeCheckUser(u.Name, u.Abstract))
+	fmt.Println(rst)
 	if rst == 0 {
 		c.Data["json"] = struct {
 			Code	int `json:"code"`
@@ -47,4 +59,5 @@ func (c *IdentifyController) CheckUser()  {
 			"permission verification passed",
 		}
 	}
+	c.ServeJSON()
 }
