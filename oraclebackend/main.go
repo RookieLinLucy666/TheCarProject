@@ -11,12 +11,12 @@ package main
 import (
 	"github.com/astaxie/beego"
 	"github.com/astaxie/beego/orm"
-	"oraclebackend/oracle"
-	_ "oraclebackend/routers"
+	"github.com/astaxie/beego/plugins/cors"
 	_ "github.com/go-sql-driver/mysql"
 	jsoniter "github.com/json-iterator/go"
-	"github.com/astaxie/beego/plugins/cors"
 	"log"
+	"oraclebackend/oracle"
+	_ "oraclebackend/routers"
 	"os"
 	"strconv"
 	"time"
@@ -70,9 +70,9 @@ func main() {
 	//	fmt.Println("time consume : ", float64(time)/1000000000)
 	//	debugLog.Printf("time consume : %v", float64(time)/1000000000)
 	//}
-	orm.RegisterDataBase("default", "mysql", "root:lyj030325@tcp(127.0.0.1:3306)/the_car_project?charset=utf8")
+	orm.RegisterDataBase("default", "mysql", "root:123456@tcp(127.0.0.1:3306)/the_car_project?charset=utf8")
 	beego.InsertFilter("*", beego.BeforeRouter, cors.Allow(&cors.Options{
-        //允许访问所有源
+      //允许访问所有源
 	AllowAllOrigins: true,
 			//可选参数"GET", "POST", "PUT", "DELETE", "OPTIONS" (*为所有)
 			//其中Options跨域复杂请求预检

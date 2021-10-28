@@ -9,11 +9,11 @@ import (
 	"github.com/xuperchain/contract-sdk-go/code"
 )
 
-type carFileAsset struct {}
+type advFileAsset struct {}
 
 const (
-	CAR_FILE_ASSET_ID	=	"CarFileAssetId_"
-	CAR_FILE_ASSET_COUNT = "CarFileAssetCount"
+	ADV_FILE_ASSET_ID	=	"AdvFileAssetId_"
+	ADV_FILE_ASSET_COUNT = "AdvFileAssetCount"
 	TASK_QUEUE = "QueryQueue"
 	META = "Meta"
 	RESULT = "Result"
@@ -65,10 +65,10 @@ type faderatedAIResult struct {
  * @Date 2021/9/14
  * @Description 初始化函数，对Id计数器、任务队列、元数据字典以及返回结果字典进行初始化
  */
-func (cfa *carFileAsset) Initialize(ctx code.Context) code.Response{
+func (cfa *advFileAsset) Initialize(ctx code.Context) code.Response{
 	//初始化Id计数器
-	if _, err := ctx.GetObject([]byte(CAR_FILE_ASSET_COUNT)); err != nil {
-		if err := ctx.PutObject([]byte(CAR_FILE_ASSET_COUNT), []byte("0")); err != nil {
+	if _, err := ctx.GetObject([]byte(ADV_FILE_ASSET_COUNT)); err != nil {
+		if err := ctx.PutObject([]byte(ADV_FILE_ASSET_COUNT), []byte("0")); err != nil {
 			return code.Error(err)
 		}
 	}
@@ -115,7 +115,7 @@ func (cfa *carFileAsset) Initialize(ctx code.Context) code.Response{
  * @Description 域内共享与跨域共享应用合约，负责根据Id查询元数据，并调用代理合约
  * 				——————验证部分未写——————
  */
-func (cfa *carFileAsset) Query(ctx code.Context) code.Response{
+func (cfa *advFileAsset) Query(ctx code.Context) code.Response{
 	//接收参数
 	args := struct {
 		Id 			string `json:"id"`
@@ -156,7 +156,7 @@ func (cfa *carFileAsset) Query(ctx code.Context) code.Response{
  * @Date 2021/9/14
  * @Description 域内共享与跨域共享代理合约，负责将查询任务加入任务队列，并出发查询事件
  */
-func (cfa *carFileAsset) QueryAgentAccept(ctx code.Context, task queryTask) error {
+func (cfa *advFileAsset) QueryAgentAccept(ctx code.Context, task queryTask) error {
 	//获取链上队列
 	qByte, err := ctx.GetObject([]byte(TASK_QUEUE))
 	if err != nil {
@@ -189,7 +189,7 @@ func (cfa *carFileAsset) QueryAgentAccept(ctx code.Context, task queryTask) erro
  * @Description 域内共享与跨域共享回调合约，负责验证回调数据、回调结果上链、任务队列出队
 				——————验证部分未写——————
 */
-func (cfa *carFileAsset) QueryCallBack(ctx code.Context) code.Response {
+func (cfa *advFileAsset) QueryCallBack(ctx code.Context) code.Response {
 	//接收参数
 	args := struct {
 		Id		string `json:"id"`
@@ -242,7 +242,7 @@ func (cfa *carFileAsset) QueryCallBack(ctx code.Context) code.Response {
  * @Date 2021/9/15
  * @Description 计算共享应用合约，负责查询元数据，调用代理合约
  */
-func (cfa *carFileAsset) ComputingShare(ctx code.Context) code.Response{
+func (cfa *advFileAsset) ComputingShare(ctx code.Context) code.Response{
 	//接收参数
 	args := struct{
 		Id			string `json:"id"`
@@ -290,7 +290,7 @@ func (cfa *carFileAsset) ComputingShare(ctx code.Context) code.Response{
  * @Date 2021/9/15
  * @Description 计算共享代理合约，负责任务队列入队、出发计算共享事件
  */
-func (cfa *carFileAsset) ComputingShareAgent(ctx code.Context, data faderatedAIData) error {
+func (cfa *advFileAsset) ComputingShareAgent(ctx code.Context, data faderatedAIData) error {
 	//获取链上队列
 	qByte, err := ctx.GetObject([]byte(TASK_QUEUE))
 	if err != nil {
@@ -323,7 +323,7 @@ func (cfa *carFileAsset) ComputingShareAgent(ctx code.Context, data faderatedAID
  * @Description 计算共享回调合约，负责验证身份、结果上链、任务队列出队
 				——————验证内容未编写——————
 */
-func (cfa *carFileAsset) ComputingCallBack(ctx code.Context) code.Response {
+func (cfa *advFileAsset) ComputingCallBack(ctx code.Context) code.Response {
 	//接收参数
 	args := struct {
 		Id					string `json:"id"`
@@ -375,19 +375,19 @@ func (cfa *carFileAsset) ComputingCallBack(ctx code.Context) code.Response {
  * @Date 2021/9/13
  * @Description 负责进行元数据结构体上链
  */
-func (cfa *carFileAsset) CreateCfa(ctx code.Context) code.Response{
+func (cfa *advFileAsset) CreateCfa(ctx code.Context) code.Response{
 	args := metaData{}
 	//验证传入参数格式
 	if err := code.Unmarshal(ctx.Args(), &args); err != nil {
 		return code.Error(err)
 	}
 	//获取id数量并加1
-	countByte, err := ctx.GetObject([]byte(CAR_FILE_ASSET_COUNT))
+	countByte, err := ctx.GetObject([]byte(ADV_FILE_ASSET_COUNT))
 	count := 0
 	if err == nil {
 		count, _ = strconv.Atoi(string(countByte))
 	}
-	newId := CAR_FILE_ASSET_ID + strconv.Itoa(count+1)
+	newId := ADV_FILE_ASSET_ID + strconv.Itoa(count+1)
 	//json-->string-->[]byte
 	data := metaData{
 		Uploader: 	args.Uploader,
@@ -410,7 +410,7 @@ func (cfa *carFileAsset) CreateCfa(ctx code.Context) code.Response{
 		return code.Error(err)
 	}
 	//更新id数量
-	if err := ctx.PutObject([]byte(CAR_FILE_ASSET_COUNT), []byte(strconv.Itoa(count+1))); err != nil {
+	if err := ctx.PutObject([]byte(ADV_FILE_ASSET_COUNT), []byte(strconv.Itoa(count+1))); err != nil {
 		return code.Error(err)
 	}
 	return code.OK([]byte(newId))
@@ -423,7 +423,7 @@ func (cfa *carFileAsset) CreateCfa(ctx code.Context) code.Response{
  * @Date 2021/9/13
  * @Description 负责元数据修改，只有上传者有权限修改元数据
  */
-func (cfa *carFileAsset) UpdateCfa(ctx code.Context) code.Response {
+func (cfa *advFileAsset) UpdateCfa(ctx code.Context) code.Response {
 	args := struct {
 		Id			string `json:"id"`
 		Operator	string `json:"operator"`
@@ -464,7 +464,7 @@ func (cfa *carFileAsset) UpdateCfa(ctx code.Context) code.Response {
  * @Date 2021/10/19
  * @Description 添加认证用户
  */
-func (cfa *carFileAsset) AddUser(ctx code.Context) code.Response {
+func (cfa *advFileAsset) AddUser(ctx code.Context) code.Response {
 	//验证参数
 	args := struct {
 		Name		string `json:"name"`
@@ -497,7 +497,7 @@ func (cfa *carFileAsset) AddUser(ctx code.Context) code.Response {
  * @Date 2021/10/19
  * @Description 检测用户是否上链
  */
-func (cfa *carFileAsset) CheckUser(ctx code.Context) code.Response {
+func (cfa *advFileAsset) CheckUser(ctx code.Context) code.Response {
 	//验证参数
 	args := struct {
 		Name		string `json:"name"`
@@ -524,5 +524,5 @@ func (cfa *carFileAsset) CheckUser(ctx code.Context) code.Response {
 }
 
 func main() {
-	driver.Serve(new(carFileAsset))
+	driver.Serve(new(advFileAsset))
 }

@@ -9,13 +9,14 @@
 package controllers
 
 import (
+	"fmt"
 	"github.com/astaxie/beego"
+	"net"
 	"oraclebackend/models"
 	"oraclebackend/oracle"
 	"oraclebackend/xuperchain"
-	"net"
 	"strconv"
-	"fmt"
+	"time"
 )
 
 type DataShareController struct {
@@ -72,6 +73,14 @@ func (c *DataShareController) Query()  {
 			break
 		}
 	}
+	time.Sleep(5000)
+	msg, _ := models.GetOneResultByBcId(v.BcId)
+	c.Data["json"] = struct{
+		Msg		string
+	}{
+		Msg: msg.Result,
+	}
+	c.ServeJSON()
 }
 
 func (c *DataShareController) ComputingShare()  {
@@ -110,4 +119,12 @@ func (c *DataShareController) ComputingShare()  {
 			break
 		}
 	}
+	//time.Sleep(5000)
+	//msg, _ := models.GetOneResultByBcId(args.Bcid)
+	//c.Data["json"] = struct{
+	//	Msg		string
+	//}{
+	//	Msg: msg.Result,
+	//}
+	//c.ServeJSON()
 }

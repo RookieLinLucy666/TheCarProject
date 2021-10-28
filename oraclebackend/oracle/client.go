@@ -108,7 +108,6 @@ func (c *Client) SendRequest(dataType string, bcid string, demand xuperchain.Fed
 	case "cross":
 		reqmsg = ListenCross(bcid)
 	}
-
 	sig, err := c.signMessage(reqmsg)
 	if err != nil {
 		fmt.Printf("%v\n", err)
@@ -221,7 +220,11 @@ func (c *Client) handleReply(payload []byte) bool {
 			xuperchain.InvokeComputingCallBack(replyMsg.ID, replyMsg.Msgs[0], string(replyMsg.ASig), byte2string(replyMsg.PKs))
 			fmt.Println("Finish Cross")
 		}
-
+		r := models.Result{
+			BcId: replyMsg.ID,
+			Result: replyMsg.Msgs[0],
+		}
+		models.AddResult(&r)
 		c.EndTime = time.Now()
 		fmt.Println("Finish calculation.")
 		return true

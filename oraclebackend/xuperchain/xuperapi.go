@@ -14,10 +14,10 @@ import (
 )
 
 const (
-	Address = "ezDq8L2yHpqTSmKFs3HCiFmVELN67hFF3"
+	Address = "mm29qJT3mrHq9LXLCzmr9KwAC14zPrgpg"
 	Contract_Addr = "XC1234567890111113@xuper"
-	Contract_Name = "SDKNativeCount18"
-	Mnemonic = "抱 丙 德 斯 伐 珠 凸 踏 杆 寻 宣 取"
+	Contract_Name = "SDKNativeCount21"
+	Mnemonic = "芳 庙 疫 啦 红 变 好 快 亦 终 粘 色"
 )
 
 
@@ -57,7 +57,7 @@ type FederatedAIDemand struct {
   CreateAccount
   @Description: 创建账户
 	命令行转钱：
-	./xchain-cli transfer --to ehxodjwhVtESXcqpdUZ2LExs53DS4aHkE --amount 10000000000 --keys data/keys/ -H 127.0.0.1:37101
+	./xchain-cli transfer --to mm29qJT3mrHq9LXLCzmr9KwAC14zPrgpg --amount 10000000000 --keys data/keys/ -H 127.0.0.1:37101
 **/
 func CreateAccount() {
 	var acc *account.Account
