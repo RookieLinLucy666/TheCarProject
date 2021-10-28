@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"oraclebackend/xuperchain"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -18,28 +19,43 @@ type UserController struct {
 
 // URLMapping ...
 func (c *UserController) URLMapping() {
-	c.Mapping("Post", c.Post)
+	c.Mapping("AddUser", c.AddUser)
 	c.Mapping("GetOne", c.GetOne)
 	c.Mapping("GetAll", c.GetAll)
 	c.Mapping("Put", c.Put)
 	c.Mapping("Delete", c.Delete)
 }
 
-// Post ...
-// @Title Post
+// AddUser ...
+// @Title Add user
 // @Description create User
 // @Param	body		body 	models.User	true		"body for User content"
 // @Success 201 {int} models.User
 // @Failure 403 body is empty
-// @router / [post]
-func (c *UserController) Post() {
+// @router / [get]
+func (c *UserController) AddUser() {
 	var v models.User
-	json.Unmarshal(c.Ctx.Input.RequestBody, &v)
+	v.Name = c.GetString("name")
+	v.Abstract = c.GetString("abstract")
+	v.ChainStatus = "Success"
 	if _, err := models.AddUser(&v); err == nil {
+		xuperchain.InvokeAddUser(v.Name, v.Abstract)
 		c.Ctx.Output.SetStatus(201)
 		c.Data["json"] = v
 	} else {
 		c.Data["json"] = err.Error()
+	}
+	c.ServeJSON()
+}
+
+//Verify
+func (c *UserController) Verify()  {
+	idStr := xuperchain.InvokeCheckUser(c.GetString("name"), c.GetString("abstract"))
+	id, _ := strconv.Atoi(idStr)
+	if id == 0 {
+		c.Data["json"] = "FAIL"
+	} else {
+		c.Data["json"] = "SUCCESS"
 	}
 	c.ServeJSON()
 }

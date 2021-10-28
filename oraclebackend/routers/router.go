@@ -16,7 +16,7 @@ import (
 func init() {
 	beego.Router("/datashare/createdata", &controllers.DataShareController{}, "post:CreateData")
 	beego.Router("/datashare/query", &controllers.DataShareController{}, "get:Query")
-	beego.Router("/datashare/computingshare", &controllers.DataShareController{}, "post:ComputingShare")
+	beego.Router("/datashare/computingshare", &controllers.DataShareController{}, "get:ComputingShare")
 	beego.Router("/metadata/getall", &controllers.MetadataController{}, "get:GetAll")
 	beego.Router("/identify/adduser", &controllers.IdentifyController{}, "post:AddUser")
 	beego.Router("/identify/checkuser", &controllers.IdentifyController{}, "post:CheckUser")

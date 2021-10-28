@@ -222,11 +222,18 @@ func (c *Client) handleReply(payload []byte) bool {
 		}
 		r := models.Result{
 			BcId: replyMsg.ID,
-			Result: replyMsg.Msgs[0],
+			Result: replyMsg.Result,
 		}
-		models.AddResult(&r)
+
+		fmt.Println(replyMsg.Result)
+
+		_, err := models.AddResult(&r)
+		if err != nil {
+			fmt.Println(err)
+		}
 		c.EndTime = time.Now()
 		fmt.Println("Finish calculation.")
+		fmt.Println(r.Result)
 		return true
 	}
 	return false

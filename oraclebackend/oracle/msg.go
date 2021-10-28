@@ -127,6 +127,7 @@ func (msg DataMsg) String() string {
   @Description: 聚合数据的消息
 **/
 type AggDataMsg struct {
+	Result string
 	NodeID     int 		`json:"node_id"`
 	BlsSig      []byte  `json:"bls_sk"`
 	BlsPK      []byte  `json:"bls_pk"`
@@ -175,6 +176,7 @@ type ReplyMsg struct {
 	Msgs   []string `json:"msgs"`
 	Type string `json:"type"`
 	ID string `json:"id"`
+	Result string `json:"result"`
 }
 
 func (msg ReplyMsg) String() string {

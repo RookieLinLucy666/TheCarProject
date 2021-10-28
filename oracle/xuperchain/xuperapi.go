@@ -16,7 +16,7 @@ import (
 const (
 	Address = "ezDq8L2yHpqTSmKFs3HCiFmVELN67hFF3"
 	Contract_Addr = "XC1234567890111113@xuper"
-	Contract_Name = "SDKNativeCount16"
+	Contract_Name = "SDKNativeCount20"
 	Mnemonic = "抱 丙 德 斯 伐 珠 凸 踏 杆 寻 宣 取"
 )
 

@@ -26,6 +26,7 @@ type DataShareController struct {
 func (c *DataShareController) UrlMapping()  {
 	c.Mapping("CreateData", c.CreateData)
 	c.Mapping("Query", c.Query)
+	c.Mapping("computingshare", c.ComputingShare)
 }
 
 func (c *DataShareController) CreateData()  {
@@ -52,9 +53,10 @@ func (c *DataShareController) CreateData()  {
 
 func (c *DataShareController) Query()  {
 	var v *models.Metadata
-	//idStr := c.Ctx.Input.Param(":id")
-	idStr := "7"
+	idStr := c.GetString("id")
+	//idStr := "7"
 	id, _ := strconv.ParseInt(idStr, 0, 64)
+	fmt.Println("id:  "+idStr)
 	v, _ = models.GetMetadataById(id)
 	o := oracle.NewClient(0)
 	o.SendRequest(v.Type, v.BcId, xuperchain.FederatedAIDemand{}, id)
@@ -73,7 +75,7 @@ func (c *DataShareController) Query()  {
 			break
 		}
 	}
-	time.Sleep(5000)
+	time.Sleep(time.Second*3)
 	msg, _ := models.GetOneResultByBcId(v.BcId)
 	c.Data["json"] = struct{
 		Msg		string
@@ -84,6 +86,7 @@ func (c *DataShareController) Query()  {
 }
 
 func (c *DataShareController) ComputingShare()  {
+	fmt.Println("this is computing share")
 	args := struct {
 		Bcid		string `json:"bcid"`
 		Type		string `json:"type"`
@@ -91,10 +94,15 @@ func (c *DataShareController) ComputingShare()  {
 		Dataset 	string `json:"dataset"`
 		Round 		string `json:"round"`
 		Epoch 		string `json:"epoch"`
-	}{}
-	if err := c.ParseForm(&args); err != nil{
-		c.Data["json"] = err.Error()
+	}{
+		Bcid: c.GetString("bcid"),
+		Type: c.GetString("type"),
+		Model: c.GetString("model"),
+		Dataset: c.GetString("dataset"),
+		Round: c.GetString("round"),
+		Epoch: c.GetString("epoch"),
 	}
+	fmt.Println(args)
 	demand := xuperchain.FederatedAIDemand{
 		Model: args.Model,
 		Dataset: args.Dataset,
@@ -102,7 +110,6 @@ func (c *DataShareController) ComputingShare()  {
 		Epoch: args.Epoch,
 	}
 	o := oracle.NewClient(0)
-	fmt.Println(args)
 	o.SendRequest(args.Type, args.Bcid, demand, -1)
 	ln, err := net.Listen("tcp", o.Url)
 	if err != nil {
@@ -119,12 +126,12 @@ func (c *DataShareController) ComputingShare()  {
 			break
 		}
 	}
-	//time.Sleep(5000)
-	//msg, _ := models.GetOneResultByBcId(args.Bcid)
-	//c.Data["json"] = struct{
-	//	Msg		string
-	//}{
-	//	Msg: msg.Result,
-	//}
-	//c.ServeJSON()
+	time.Sleep(time.Second*13)
+	msg, _ := models.GetOneResultByBcId(args.Bcid)
+	c.Data["json"] = struct{
+		Msg		string
+	}{
+		Msg: msg.Result,
+	}
+	c.ServeJSON()
 }

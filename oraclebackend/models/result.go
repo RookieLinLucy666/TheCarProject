@@ -12,7 +12,7 @@ import (
 type Result struct {
 	Id     int64  `orm:"auto"`
 	BcId   string `orm:"size(128)"`
-	Result string `orm:"size(128)"`
+	Result string
 }
 
 func init() {

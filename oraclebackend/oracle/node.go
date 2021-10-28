@@ -399,7 +399,7 @@ func (node *Node) handleAgg(aggMsg *AggMsg, sig []byte, clientNodeUrl string, id
 			msgs: nil,
 		}
 	}
-	node.blslog[current_epoch].msgs = append(node.blslog[current_epoch].msgs, string(aggMsg.Message))
+	node.blslog[current_epoch].msgs = append(node.blslog[current_epoch].msgs, aggMsg.Message)
 	node.blslog[current_epoch].sigs = append(node.blslog[current_epoch].sigs, blssig)
 	node.blslog[current_epoch].pks = append(node.blslog[current_epoch].pks, blspk)
 	node.mutex.Unlock()
@@ -444,7 +444,7 @@ func (node *Node) handleAgg(aggMsg *AggMsg, sig []byte, clientNodeUrl string, id
 		if current_epoch ==  global_epoch {
 			var replyMsg ReplyMsg
 			replyMsg = ReplyMsg{
-				Digest: out.String(),
+				Result: out.String(),
 				ASig: asig.Marshal(),
 				PKs: pks,
 				Msgs: msgs,
@@ -507,6 +507,7 @@ func (node *Node) handleAgg(aggMsg *AggMsg, sig []byte, clientNodeUrl string, id
 func (node *Node) handleData(dataMsg *DataMsg, sig []byte, clientNodeUrl string, id string) {
 	primaryID := node.findPrimaryNode()
 	_, primary_url := node.findNodePubkey(primaryID)
+
 	client := &http.Client{}
 	//"https://pro-api.coinmarketcap.com/v1/cryptocurrency/listings/latest"
 	req, err := http.NewRequest("GET",dataMsg.Ip, nil)
@@ -539,6 +540,7 @@ func (node *Node) handleData(dataMsg *DataMsg, sig []byte, clientNodeUrl string,
 
 	blssig := Sign(node.blsSK, result)
 	aggDataMsg := AggDataMsg{
+		Result: result,
 		NodeID: node.NodeID,
 		BlsSig:  blssig.Marshal(),
 		BlsPK:   node.blsPK.Marshal(),
@@ -606,6 +608,7 @@ func (node *Node) handleAggData(aggDataMsg *AggDataMsg, sig []byte, clientNodeUr
 
 		var replyMsg ReplyMsg
 		replyMsg = ReplyMsg{
+			Result: aggDataMsg.Result,
 			ASig: asig.Marshal(),
 			PKs: pks,
 			Msgs: msgs,
