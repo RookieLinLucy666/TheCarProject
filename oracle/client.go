@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	"github.com/TheCarProject/oracle/xuperchain"
+	xuperchain "oraclebackend/xuperchain"
 	"golang.org/x/crypto/bn256"
 	"io/ioutil"
 	"math"
@@ -41,7 +41,7 @@ func NewClient(i int32) *Client {
 	return client
 }
 
-type CarFileAsset struct {
+type AdvFileAsset struct {
 	Uploader string `json:"uploader"`
 	Name string `json:"name"`
 	Type string `json:"type"`
@@ -120,7 +120,7 @@ func (c *Client) sendRequest() {
 	//	Abstract: "162accb12e079d4b805f65f7a773c5e10cf537fef5ff99fde901ef0b1c963af8",
 	//}
 
-	cfa := CarFileAsset{
+	adv := AdvFileAsset{
 		Uploader: "xuperchain",
 		Name:     "counter",
 		Type:     "cross", // data, cross, compute
@@ -128,9 +128,9 @@ func (c *Client) sendRequest() {
 		Route:    "xuperchain",
 		Abstract: "162accb12e079d4b805f65f7a773c5e10cf537fef5ff99fde901ef0b1c963af8",
 	}
-	id := xuperchain.InvokeCreateCfa(cfa.Uploader, cfa.Name, cfa.Type, cfa.Ip, cfa.Route, cfa.Abstract)
+	id := xuperchain.InvokeCreateAdv(adv.Uploader, adv.Name, adv.Type, adv.Ip, adv.Route, adv.Abstract)
 
-	switch cfa.Type {
+	switch adv.Type {
 	case "compute":
 		reqmsg = ListenCompute(id)
 	case "data":
@@ -161,9 +161,9 @@ func (c *Client) sendRequest() {
 
 func ListenData(id string) *RequestMsg {
 	xuperchain.InvokeQuery(id)
-	xuperchain.ListenQueryEvent()
+	//xuperchain.ListenQueryEvent()
 	metadata, _ := xuperchain.GetVariable()
-	//fmt.Println(metadata)
+	fmt.Println(metadata)
 
 	return &RequestMsg{
 		NodeCount: NodeCount,
@@ -175,7 +175,7 @@ func ListenData(id string) *RequestMsg {
 
 func ListenCross(id string) *RequestMsg{
 	xuperchain.InvokeQuery(id)
-	xuperchain.ListenQueryEvent()
+	//xuperchain.ListenQueryEvent()
 	metadata, _ := xuperchain.GetVariable()
 	//fmt.Println(metadata)
 
@@ -189,7 +189,7 @@ func ListenCross(id string) *RequestMsg{
 
 func ListenCompute(id string) *RequestMsg{
 	xuperchain.InvokeComputingShare(id, "cnn", "mnist", "1", "1")
-	xuperchain.ListenComputingShareEvent()
+	//xuperchain.ListenComputingShareEvent()
 	metadata, learning := xuperchain.GetVariable()
 
 	round, _ := strconv.Atoi(learning.Round)
@@ -230,13 +230,13 @@ func (c *Client) handleReply(payload []byte) bool {
 	ok := AVerify(asig,replyMsg.Msgs,pks)
 	if ok {
 		if replyMsg.Type == "compute" {
-			xuperchain.InvokeComputingCallBack(replyMsg.ID, replyMsg.Msgs[0], string(replyMsg.ASig), byte2string(replyMsg.PKs))
+			xuperchain.InvokeComputingCallBack(replyMsg.ID, replyMsg.Msgs[0])
 			fmt.Println("Finish Compute")
 		} else if replyMsg.Type == "data" {
-			xuperchain.InvokeQueryCallback(replyMsg.ID, replyMsg.Msgs[0], string(replyMsg.ASig), byte2string(replyMsg.PKs))
+			xuperchain.InvokeQueryCallback(replyMsg.ID, replyMsg.Msgs[0])
 			fmt.Println("Finish Data")
 		} else if replyMsg.Type == "cross" {
-			xuperchain.InvokeComputingCallBack(replyMsg.ID, replyMsg.Msgs[0], string(replyMsg.ASig), byte2string(replyMsg.PKs))
+			xuperchain.InvokeComputingCallBack(replyMsg.ID, replyMsg.Msgs[0])
 			fmt.Println("Finish Cross")
 		}
 		c.EndTime = time.Now()

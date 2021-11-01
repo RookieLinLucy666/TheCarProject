@@ -42,7 +42,7 @@ func (c *DataShareController) CreateData()  {
 		Route: v.Route,
 		Abstract: v.Abstract,
 	}
-	v1.BcId = xuperchain.InvokeCreateCfa(v.Uploader, v.Name, v.Type, v.Ip, v.Route, v.Abstract)
+	v1.BcId = xuperchain.InvokeCreateAdvBSN(v.Uploader, v.Name, v.Type, v.Ip, v.Route, v.Abstract)
 	if _, err := models.AddMetadata(&v1); err == nil {
 		c.Ctx.Output.SetStatus(201)
 		c.Data["json"] = v1
@@ -126,7 +126,7 @@ func (c *DataShareController) ComputingShare()  {
 			break
 		}
 	}
-	time.Sleep(time.Second*13)
+	time.Sleep(time.Second*10)
 	msg, _ := models.GetOneResultByBcId(args.Bcid)
 	c.Data["json"] = struct{
 		Msg		string

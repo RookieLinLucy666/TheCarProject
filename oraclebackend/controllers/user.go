@@ -39,7 +39,7 @@ func (c *UserController) AddUser() {
 	v.Abstract = c.GetString("abstract")
 	v.ChainStatus = "Success"
 	if _, err := models.AddUser(&v); err == nil {
-		xuperchain.InvokeAddUser(v.Name, v.Abstract)
+		xuperchain.InvokeAddUserBSN(v.Name, v.Abstract)
 		c.Ctx.Output.SetStatus(201)
 		c.Data["json"] = v
 	} else {
@@ -50,7 +50,7 @@ func (c *UserController) AddUser() {
 
 //Verify
 func (c *UserController) Verify()  {
-	idStr := xuperchain.InvokeCheckUser(c.GetString("name"), c.GetString("abstract"))
+	idStr := xuperchain.QueryVerifyUserBSN(c.GetString("name"), c.GetString("abstract"))
 	id, _ := strconv.Atoi(idStr)
 	if id == 0 {
 		c.Data["json"] = "FAIL"

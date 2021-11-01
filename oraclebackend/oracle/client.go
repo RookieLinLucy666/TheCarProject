@@ -129,7 +129,7 @@ func (c *Client) SendRequest(dataType string, bcid string, demand xuperchain.Fed
 }
 
 func ListenData(bcid string, id int64) *RequestMsg {
-	xuperchain.InvokeQuery(bcid)
+	xuperchain.InvokeQueryBSN(bcid)
 	//err := xuperchain.ListenQueryEvent()
 	//if err != nil {
 	//	fmt.Println(err)
@@ -154,8 +154,8 @@ func ListenData(bcid string, id int64) *RequestMsg {
 }
 
 func ListenCross(id string) *RequestMsg{
-	xuperchain.InvokeQuery(id)
-	xuperchain.ListenQueryEvent()
+	xuperchain.InvokeQueryBSN(id)
+	//xuperchain.ListenQueryEvent()
 	metadata, _ := xuperchain.GetVariable()
 	//fmt.Println(metadata)
 
@@ -168,7 +168,7 @@ func ListenCross(id string) *RequestMsg{
 }
 
 func ListenCompute(id string, demand xuperchain.FederatedAIDemand) *RequestMsg{
-	xuperchain.InvokeComputingShare(id, demand.Model, demand.Dataset, demand.Round, demand.Epoch)
+	xuperchain.InvokeComputingshareBSN(id, demand.Model, demand.Dataset, demand.Round, demand.Epoch)
 	//xuperchain.ListenComputingShareEvent()
 	//fmt.Println("123")
 	//metadata, learning := xuperchain.GetVariable()
@@ -211,13 +211,13 @@ func (c *Client) handleReply(payload []byte) bool {
 	ok := AVerify(asig,replyMsg.Msgs,pks)
 	if ok {
 		if replyMsg.Type == "compute" {
-			xuperchain.InvokeComputingCallBack(replyMsg.ID, replyMsg.Msgs[0], string(replyMsg.ASig), byte2string(replyMsg.PKs))
+			xuperchain.InvokeComputingCallBackBSN(replyMsg.ID, replyMsg.Msgs[0])
 			fmt.Println("Finish Compute")
 		} else if replyMsg.Type == "data" {
-			xuperchain.InvokeQueryCallback(replyMsg.ID, replyMsg.Msgs[0], string(replyMsg.ASig), byte2string(replyMsg.PKs))
+			xuperchain.InvokeQueryCallBackBSN(replyMsg.ID, replyMsg.Msgs[0])
 			fmt.Println("Finish Data")
 		} else if replyMsg.Type == "cross" {
-			xuperchain.InvokeComputingCallBack(replyMsg.ID, replyMsg.Msgs[0], string(replyMsg.ASig), byte2string(replyMsg.PKs))
+			xuperchain.InvokeQueryCallBackBSN(replyMsg.ID, replyMsg.Msgs[0])
 			fmt.Println("Finish Cross")
 		}
 		r := models.Result{
@@ -225,15 +225,12 @@ func (c *Client) handleReply(payload []byte) bool {
 			Result: replyMsg.Result,
 		}
 
-		fmt.Println(replyMsg.Result)
-
 		_, err := models.AddResult(&r)
 		if err != nil {
 			fmt.Println(err)
 		}
 		c.EndTime = time.Now()
 		fmt.Println("Finish calculation.")
-		fmt.Println(r.Result)
 		return true
 	}
 	return false

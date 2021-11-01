@@ -24,7 +24,7 @@ func (c *IdentifyController) AddUser()  {
 	//}
 	json.Unmarshal(c.Ctx.Input.RequestBody, &u)
 	fmt.Println(c.Ctx.Input)
-	rst := xuperchain.InvokeAddUser(u.Name, u.Abstract)
+	rst := xuperchain.InvokeAddUserBSN(u.Name, u.Abstract)
 	fmt.Println(rst)
 	c.Data["json"] = struct {
 		Desc	string `json:"desc"`
@@ -40,7 +40,7 @@ func (c *IdentifyController) CheckUser()  {
 		c.Data["json"] = err.Error()
 	}
 	fmt.Println(u)
-	rst, _ := strconv.Atoi(xuperchain.InvokeCheckUser(u.Name, u.Abstract))
+	rst, _ := strconv.Atoi(xuperchain.QueryVerifyUserBSN(u.Name, u.Abstract))
 	fmt.Println(rst)
 	if rst == 0 {
 		c.Data["json"] = struct {
