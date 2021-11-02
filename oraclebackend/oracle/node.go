@@ -7,11 +7,11 @@ import (
 	"fmt"
 	"golang.org/x/crypto/bn256"
 	"io/ioutil"
-	"log"
+	//"log"
 	"math/big"
 	"net/http"
-	"net/url"
-	"os"
+	//"net/url"
+	//"os"
 	"os/exec"
 	"strconv"
 	"sync"
@@ -509,33 +509,43 @@ func (node *Node) handleData(dataMsg *DataMsg, sig []byte, clientNodeUrl string,
 	_, primary_url := node.findNodePubkey(primaryID)
 
 	client := &http.Client{}
-	//"https://pro-api.coinmarketcap.com/v1/cryptocurrency/listings/latest"
-	req, err := http.NewRequest("GET",dataMsg.Ip, nil)
+	req, err := http.NewRequest("GET", "https://api.apishop.net/common/air/getCityPM25Detail?apiKey=SWj6Udr57f1a3a1e1b9c7c0b430943befa89e38cc4765b8&city=北京市", nil)
 	if err != nil {
-		log.Print(err)
-		os.Exit(1)
+		fmt.Printf("%v\n", err)
 	}
-
-	q := url.Values{}
-	q.Add("start", "1")
-	q.Add("limit", "1")
-	q.Add("convert", "USD")
-
-	req.Header.Set("Accepts", "application/json")
-	// API Key需要去官网获取
-	req.Header.Add("X-CMC_PRO_API_KEY", "35545489-9617-49fa-8200-1bd00e4d481b")
-	req.URL.RawQuery = q.Encode()
-
-
 	resp, err := client.Do(req)
+	defer resp.Body.Close()
+	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		fmt.Println("Error sending request to server: ", err)
-		os.Exit(1)
+
 	}
-	//fmt.Println(resp.Status)
-	respBody, _ := ioutil.ReadAll(resp.Body)
+	////"https://pro-api.coinmarketcap.com/v1/cryptocurrency/listings/latest"
+	//req, err := http.NewRequest("GET",dataMsg.Ip, nil)
+	//if err != nil {
+	//	log.Print(err)
+	//	os.Exit(1)
+	//}
+	//
+	//q := url.Values{}
+	//q.Add("start", "1")
+	//q.Add("limit", "1")
+	//q.Add("convert", "USD")
+	//
+	//req.Header.Set("Accepts", "application/json")
+	//// API Key需要去官网获取
+	//req.Header.Add("X-CMC_PRO_API_KEY", "35545489-9617-49fa-8200-1bd00e4d481b")
+	//req.URL.RawQuery = q.Encode()
+	//
+	//
+	//resp, err := client.Do(req)
+	//if err != nil {
+	//	fmt.Println("Error sending request to server: ", err)
+	//	os.Exit(1)
+	//}
+	////fmt.Println(resp.Status)
+	//respBody, _ := ioutil.ReadAll(resp.Body)
 	// 从API获取的数据
-	result := string(respBody)
+	result := string(body)
 	fmt.Println(result)
 
 	blssig := Sign(node.blsSK, result)
